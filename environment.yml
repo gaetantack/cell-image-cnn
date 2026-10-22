@@ -2,14 +2,14 @@ name: cell-image-cnn
 channels:
   - conda-forge
 dependencies:
-  - pillow
-  - scikit-learn
-  - numpy
-  - torchvision
-  - matplotlib
-  - pytest
-  - python=3.12
-  - pytorch
-  - pandas
-  - timm
-  - scikit-image
+  - python=3.12.15
+  - pytorch=2.14.1
+  - torchvision=0.29.1
+  - timm=1.0.30
+  - numpy=2.5.4
+  - pandas=3.1.0
+  - pillow=13.0.0
+  - scikit-image=0.26.0
+  - scikit-learn=1.9.1
+  - matplotlib=3.11.2
+  - pytest=9.1.1

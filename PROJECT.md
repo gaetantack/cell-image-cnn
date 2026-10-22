@@ -58,3 +58,9 @@ Predict the cell cycle phase of single Jurkat cells from label-free brightfield 
 |---|---|---|
 | 2026-10-22 | All settings in `src/config.py` (plain Python) | One place for config; no hard-coded values |
 | 2026-10-22 | Split saved as `splits/splits.json` and committed | Small (indices only); keeps the split reproducible |
+
+## 9. Observations
+| Date | Observation | Relevance |
+|---|---|---|
+| 2026-10-22 | Prophase cell 30439 has a bright rectangle artefact in the top-right corner, in both Ch3 and Ch6 (`figures/channel_check.png`). | RQ5 shortcut candidate |
+| 2026-10-22 | Ch6 (darkfield) background level varies a lot between cells, from near-black to mid-grey. | RQ5 shortcut candidate |

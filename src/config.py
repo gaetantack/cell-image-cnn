@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / "data" / "raw" / "BBBC048v1" / "CellCycle"
 PROCESSED_DIR = ROOT / "data" / "processed"
 CACHE_FILE = PROCESSED_DIR / "jurkat_bf_df.npz"
+FEATURES_FILE = ROOT / "data" / "features.parquet"
 SPLITS_FILE = ROOT / "splits" / "splits.json"
 RESULTS_DIR = ROOT / "results"
 FIGURES_DIR = ROOT / "figures"
@@ -21,6 +22,18 @@ IMAGE_SIZE = 66  # all images are 66 x 66, 8-bit grayscale
 CLASSES_7 = ("G1", "S", "G2", "Prophase", "Metaphase", "Anaphase", "Telophase")
 CLASSES_4 = ("G1", "S", "G2", "Mitosis")
 MAP_7_TO_4 = (0, 1, 2, 3, 3, 3, 3)
+
+# Hand-crafted features (src/features.py)
+# Mask: Otsu threshold on the brightfield |pixel - background|, background = median of the border ring
+MASK_BORDER_PX = 3  # width of the border ring used to estimate the background
+MASK_SMOOTH_SIGMA = 1.0  # Gaussian blur before thresholding
+MASK_CLOSING_RADIUS = 2
+MASK_MIN_OBJECT_PX = 30  # objects this size or smaller are removed
+INTENSITY_PERCENTILES = (10, 25, 50, 75, 90)
+GLCM_LEVELS = 32  # grey levels after quantising 0-255
+GLCM_DISTANCES = (1,)
+GLCM_ANGLES_DEG = (0, 45, 90, 135)  # GLCM properties are averaged over these
+GLCM_PROPS = ("contrast", "homogeneity", "energy", "correlation")
 
 # Split and seeds
 SPLIT_SEED = 42

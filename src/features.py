@@ -26,18 +26,27 @@ def border_median(img):
     return np.median(img[border_ring(img.shape)])
 
 
+def central_disc(shape, radius=config.MASK_OTSU_RADIUS_PX):
+    yy, xx = np.indices(shape)
+    return np.hypot(yy - (shape[0] - 1) / 2, xx - (shape[1] - 1) / 2) < radius
+
+
 def cell_mask(bf):
     """Boolean cell mask from a brightfield image.
 
     The cell is both darker (rim) and brighter (interior) than the grey background, so Otsu is
     applied to the absolute difference from the background level, not to the raw intensity.
+    The threshold is the lower of the whole-image and central-disc Otsu thresholds: a high-contrast
+    corner artefact raises the whole-image one above a pale cell's contrast (central wins), while for
+    a blurry cell filling the disc the central one splits core from halo (whole-image wins).
     Objects reaching into the border ring (corner artefacts) are dropped unless nothing else is left,
-    then the largest object is kept. All other objects are kept, so telophase doublets keep both daughters.
-    Returns (mask, number of border objects dropped).
+    then the object nearest the image centre is kept. All other objects are kept, so telophase
+    doublets keep both daughters. Returns (mask, number of border objects dropped).
     """
     diff = np.abs(bf.astype(np.float64) - border_median(bf))
     diff = filters.gaussian(diff, sigma=config.MASK_SMOOTH_SIGMA, preserve_range=True)
-    mask = diff > filters.threshold_otsu(diff)
+    threshold = min(filters.threshold_otsu(diff), filters.threshold_otsu(diff[central_disc(diff.shape)]))
+    mask = diff > threshold
     mask = ndi.binary_closing(mask, structure=morphology.disk(config.MASK_CLOSING_RADIUS))
     mask = ndi.binary_fill_holes(mask)
     mask = morphology.remove_small_objects(mask, max_size=config.MASK_MIN_OBJECT_PX)
@@ -50,8 +59,10 @@ def cell_mask(bf):
         return inner, len(edge)
     if labels.max() == 0:
         return mask, 0
-    largest = np.argmax(np.bincount(labels.ravel())[1:]) + 1
-    return labels == largest, len(edge) - 1
+    centre = (np.array(labels.shape) - 1) / 2
+    props = measure.regionprops(labels)
+    nearest = min(props, key=lambda p: np.hypot(*(np.array(p.centroid) - centre))).label
+    return labels == nearest, len(edge) - 1
 
 
 def shape_features(mask):

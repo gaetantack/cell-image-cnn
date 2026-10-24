@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from src import config
-from src.features import cell_features, cell_mask
+from src.features import NON_FEATURE_COLUMNS, cell_features, cell_mask
 
 
 def _synthetic_cell(radius=12, corner_artefact=False):
@@ -56,3 +56,26 @@ def test_darkfield_background_correction():
 def test_empty_image_gives_no_features():
     out = cell_features(np.full((2, config.IMAGE_SIZE, config.IMAGE_SIZE), 100, np.uint8))
     assert "area" not in out
+
+
+def test_feature_sets_match_computed_columns():
+    img, _ = _synthetic_cell()
+    computed = set(cell_features(np.stack([img, img])))
+    for name, cols in config.FEATURE_SETS.items():
+        assert len(cols) == len(set(cols)), name
+        assert set(cols) <= computed, set(cols) - computed
+        assert not set(cols) & set(NON_FEATURE_COLUMNS), name
+    main, raw = set(config.FEATURE_SETS["main"]), set(config.FEATURE_SETS["raw_dark"])
+    assert main < raw
+    assert not {"Ch6_mean", "Ch6_p50", "Ch6_bgcorr_mean"} & main
+    assert raw - main == {"Ch6_mean", *(f"Ch6_p{q}" for q in config.INTENSITY_PERCENTILES)}
+
+
+def test_fallback_keeps_object_nearest_centre():
+    """Only border objects: a big one in a corner and a small one nearer the centre -> keep the nearer one."""
+    size = config.IMAGE_SIZE
+    img = np.full((size, size), 100, np.uint8)
+    img[:14, :14] = 20          # big corner block
+    img[size - 6:, 20:32] = 20  # smaller block on the bottom edge, nearer the centre
+    mask, n_dropped = cell_mask(img)
+    assert n_dropped == 1 and mask[size - 4, 25] and not mask[5, 5]

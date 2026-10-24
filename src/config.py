@@ -9,6 +9,7 @@ CACHE_FILE = PROCESSED_DIR / "jurkat_bf_df.npz"
 FEATURES_FILE = ROOT / "data" / "features.parquet"
 SPLITS_FILE = ROOT / "splits" / "splits.json"
 RESULTS_DIR = ROOT / "results"
+EXPERIMENTS_FILE = RESULTS_DIR / "experiments.csv"
 FIGURES_DIR = ROOT / "figures"
 
 # Channels (file suffix per cell: <id>_<channel>.ome.jpg)

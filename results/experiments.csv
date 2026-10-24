@@ -1,0 +1,13 @@
+date,model,n_classes,eval_split,seed,settings,macro_f1,balanced_accuracy,recall,train_time_s
+2026-10-24,dummy_majority,4,val,0,"{""strategy"": ""most_frequent""}",0.1538,0.25,"{""G1"": 1.0, ""S"": 0.0, ""G2"": 0.0, ""Mitosis"": 0.0}",0.007
+2026-10-24,dummy_majority,4,val,1,"{""strategy"": ""most_frequent""}",0.1538,0.25,"{""G1"": 1.0, ""S"": 0.0, ""G2"": 0.0, ""Mitosis"": 0.0}",0.001
+2026-10-24,dummy_majority,4,val,2,"{""strategy"": ""most_frequent""}",0.1538,0.25,"{""G1"": 1.0, ""S"": 0.0, ""G2"": 0.0, ""Mitosis"": 0.0}",0.0
+2026-10-24,dummy_stratified,4,val,0,"{""strategy"": ""stratified""}",0.2579,0.2582,"{""G1"": 0.4447, ""S"": 0.2738, ""G2"": 0.2674, ""Mitosis"": 0.0467}",0.0
+2026-10-24,dummy_stratified,4,val,1,"{""strategy"": ""stratified""}",0.2624,0.2625,"{""G1"": 0.4442, ""S"": 0.2831, ""G2"": 0.2946, ""Mitosis"": 0.028}",0.0
+2026-10-24,dummy_stratified,4,val,2,"{""strategy"": ""stratified""}",0.2498,0.2499,"{""G1"": 0.4302, ""S"": 0.273, ""G2"": 0.2775, ""Mitosis"": 0.0187}",0.0
+2026-10-24,dummy_majority,7,val,0,"{""strategy"": ""most_frequent""}",0.0879,0.1429,"{""G1"": 1.0, ""S"": 0.0, ""G2"": 0.0, ""Prophase"": 0.0, ""Metaphase"": 0.0, ""Anaphase"": 0.0, ""Telophase"": 0.0}",0.001
+2026-10-24,dummy_majority,7,val,1,"{""strategy"": ""most_frequent""}",0.0879,0.1429,"{""G1"": 1.0, ""S"": 0.0, ""G2"": 0.0, ""Prophase"": 0.0, ""Metaphase"": 0.0, ""Anaphase"": 0.0, ""Telophase"": 0.0}",0.0
+2026-10-24,dummy_majority,7,val,2,"{""strategy"": ""most_frequent""}",0.0879,0.1429,"{""G1"": 1.0, ""S"": 0.0, ""G2"": 0.0, ""Prophase"": 0.0, ""Metaphase"": 0.0, ""Anaphase"": 0.0, ""Telophase"": 0.0}",0.0
+2026-10-24,dummy_stratified,7,val,0,"{""strategy"": ""stratified""}",0.148,0.1482,"{""G1"": 0.4414, ""S"": 0.2776, ""G2"": 0.2636, ""Prophase"": 0.0549, ""Metaphase"": 0.0, ""Anaphase"": 0.0, ""Telophase"": 0.0}",0.0
+2026-10-24,dummy_stratified,7,val,1,"{""strategy"": ""stratified""}",0.1476,0.1477,"{""G1"": 0.4447, ""S"": 0.28, ""G2"": 0.2984, ""Prophase"": 0.011, ""Metaphase"": 0.0, ""Anaphase"": 0.0, ""Telophase"": 0.0}",0.0
+2026-10-24,dummy_stratified,7,val,2,"{""strategy"": ""stratified""}",0.1424,0.1424,"{""G1"": 0.4223, ""S"": 0.2637, ""G2"": 0.2775, ""Prophase"": 0.033, ""Metaphase"": 0.0, ""Anaphase"": 0.0, ""Telophase"": 0.0}",0.0

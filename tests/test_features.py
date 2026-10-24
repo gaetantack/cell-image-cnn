@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from src import config
 from src.features import cell_features, cell_mask
@@ -38,6 +39,18 @@ def test_cell_features_columns():
         for p in config.GLCM_PROPS:
             assert np.isfinite(out[f"{ch}_glcm_{p}"])
     assert 0 <= out["eccentricity"] < 0.3 and out["solidity"] > 0.9
+
+
+def test_darkfield_background_correction():
+    """Raising the whole darkfield image by a constant changes raw intensities but not corrected ones."""
+    img, _ = _synthetic_cell()
+    a = cell_features(np.stack([img, img]))
+    b = cell_features(np.stack([img, img + 20]))
+    assert b["Ch6_mean"] == pytest.approx(a["Ch6_mean"] + 20)
+    assert b["Ch6_background"] == a["Ch6_background"] + 20
+    for k in ("mean", "p10", "p50", "p90"):
+        assert b[f"Ch6_bgcorr_{k}"] == pytest.approx(a[f"Ch6_bgcorr_{k}"])
+    assert "Ch3_bgcorr_mean" not in a and "Ch6_bgcorr_sd" not in a
 
 
 def test_empty_image_gives_no_features():

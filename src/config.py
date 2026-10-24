@@ -31,6 +31,9 @@ MASK_SMOOTH_SIGMA = 1.0  # Gaussian blur before thresholding
 MASK_CLOSING_RADIUS = 2
 MASK_MIN_OBJECT_PX = 30  # objects this size or smaller are removed
 INTENSITY_PERCENTILES = (10, 25, 50, 75, 90)
+# Also store mean/percentiles minus the median outside the mask (raw versions are kept too)
+BG_CORRECTED_CHANNELS = ("Ch6",)
+TINY_MASK_AREA_PX = 150  # masks smaller than this are shown in figures/tiny_masks.png
 GLCM_LEVELS = 32  # grey levels after quantising 0-255
 GLCM_DISTANCES = (1,)
 GLCM_ANGLES_DEG = (0, 45, 90, 135)  # GLCM properties are averaged over these

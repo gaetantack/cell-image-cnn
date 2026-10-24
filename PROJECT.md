@@ -59,9 +59,15 @@ Predict the cell cycle phase of single Jurkat cells from label-free brightfield 
 | 2026-10-22 | All settings in `src/config.py` (plain Python) | One place for config; no hard-coded values |
 | 2026-10-22 | Split saved as `splits/splits.json` and committed | Small (indices only); keeps the split reproducible |
 | 2026-10-24 | Main result on 4 classes (G1, S, G2, mitosis merged); 7 classes as secondary result | Anaphase (15 cells) and telophase (27) are too few for a reliable test score (about 2 and 4 test cells) |
+| 2026-10-24 | Keep every cell, including the empty-mask cell and tiny/failed masks; no cell is removed from the split | The split stays fixed; mask failures are handled at the feature level |
+| 2026-10-24 | Random forest: missing features filled with the training-set median per feature, fitted on train rows only | One cell (12686) has an empty mask; fitting on train only avoids leakage from val/test |
+| 2026-10-24 | Darkfield (Ch6) background-corrected intensity features added (mean and percentiles minus the median outside the mask); raw features kept | Lets us compare raw vs corrected, because Ch6 background differs by phase |
 
 ## 9. Observations
 | Date | Observation | Relevance |
 |---|---|---|
 | 2026-10-22 | Prophase cell 30439 has a bright rectangle artefact in the top-right corner, in both Ch3 and Ch6 (`figures/channel_check.png`). | RQ5 shortcut candidate |
 | 2026-10-22 | Ch6 (darkfield) background level varies a lot between cells, from near-black to mid-grey. | RQ5 shortcut candidate |
+| 2026-10-24 | Corner/border artefacts: the brightfield mask found an extra object in the 3 px border ring in 860 of 32,266 cells (2.7%); similar rate in G1/S/G2/prophase (2.1–2.7%). | RQ5 shortcut candidate; dropped from the mask |
+| 2026-10-24 | Ch6 background depends on phase: median border level G1 45, S 37, G2 32, prophase 33, metaphase 24 (train+val; `figures/eda_intensity_hist.png`). Subtracting it flattens Ch6 p90 across phases, but the corrected Ch6 mean is still strongly tied to the background (r = −0.92, raw r = +0.82), because the cell interior is dark regardless. | RQ5 shortcut candidate; corrected mean is not shortcut-free |
+| 2026-10-24 | 52 train/val cells have a mask < 150 px or empty (`figures/tiny_masks.png`), 39 of them G1. Most are small, blurry cells where the mask catches only the bright core. In about 5 (e.g. 18117, 25221, 39984, 44192, 48404) the mask sits on a corner/line artefact instead of a pale cell on a bright background. | Features of those cells describe the artefact; kept per decision above |

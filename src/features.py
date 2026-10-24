@@ -11,6 +11,9 @@ from src import config
 
 SHAPE_PROPS = ("area", "perimeter", "eccentricity", "solidity",
                "axis_major_length", "axis_minor_length", "extent")
+# Identifier, label and QC columns in features.parquet: never model inputs
+NON_FEATURE_COLUMNS = ("row", "cell_id", "label_7", "mask_n_objects", "mask_border_objects_dropped",
+                       "mask_touches_border", *(f"{ch}_background" for ch in config.BG_CORRECTED_CHANNELS))
 
 
 def border_ring(shape, width=config.MASK_BORDER_PX):
@@ -65,6 +68,18 @@ def intensity_features(img, mask, ch):
     return out
 
 
+def bgcorr_intensity_features(img, mask, ch):
+    """Mean and percentiles inside the mask minus the median outside it (SD is unchanged, so not repeated).
+
+    Also returns the background level itself as `{ch}_background`, a QC column, not a model feature.
+    """
+    bg = float(np.median(img[~mask]))
+    raw = intensity_features(img, mask, ch)
+    out = {f"{ch}_background": bg}
+    out.update({f"{ch}_bgcorr_{k.removeprefix(ch + '_')}": v - bg for k, v in raw.items() if not k.endswith("_sd")})
+    return out
+
+
 def glcm_features(img, mask, ch):
     """GLCM texture inside the mask: background pixels get level 0, which is dropped from the matrix."""
     levels = config.GLCM_LEVELS
@@ -94,6 +109,8 @@ def cell_features(cell):
     for c, ch in enumerate(config.INPUT_CHANNELS):
         out.update(intensity_features(cell[c], mask, ch))
         out.update(glcm_features(cell[c], mask, ch))
+        if ch in config.BG_CORRECTED_CHANNELS:
+            out.update(bgcorr_intensity_features(cell[c], mask, ch))
     return out
 
 

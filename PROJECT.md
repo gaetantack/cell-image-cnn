@@ -58,6 +58,7 @@ Predict the cell cycle phase of single Jurkat cells from label-free brightfield 
 |---|---|---|
 | 2026-10-22 | All settings in `src/config.py` (plain Python) | One place for config; no hard-coded values |
 | 2026-10-22 | Split saved as `splits/splits.json` and committed | Small (indices only); keeps the split reproducible |
+| 2026-10-24 | Main result on 4 classes (G1, S, G2, mitosis merged); 7 classes as secondary result | Anaphase (15 cells) and telophase (27) are too few for a reliable test score (about 2 and 4 test cells) |
 
 ## 9. Observations
 | Date | Observation | Relevance |

@@ -24,6 +24,7 @@ MODEL_LABELS = {
     "smallcnn": "SmallCNN",
     "resnet18_pretrained": "ResNet18 (ImageNet)",
     "resnet18_scratch": "ResNet18 (scratch)",
+    "random_forest_raw_dark": "Random forest + raw DF levels (RQ5 side experiment)",
 }
 INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e5e4e0"
 

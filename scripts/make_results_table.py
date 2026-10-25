@@ -14,7 +14,8 @@ from src.experiments import read_log
 from src.plotting import MODEL_LABELS
 
 MODELS = ("dummy_majority", "dummy_stratified", "random_forest", "smallcnn", "resnet18_pretrained",
-          "resnet18_scratch")
+          "resnet18_scratch", "random_forest_raw_dark")
+RUN_PREFIX = {"random_forest": "rf", "random_forest_raw_dark": "rf_raw_dark"}  # run_id prefix if not the model name
 CLASS_NAMES = {4: config.CLASSES_4, 7: config.CLASSES_7}
 
 
@@ -23,7 +24,7 @@ def final_runs(log, model, n_classes):
     rows = log[(log["model"] == model) & (log["n_classes"] == n_classes) & (log["eval_split"] == "val")]
     if model.startswith("dummy"):
         return rows[rows["seed"].isin(config.SEEDS)]
-    prefix = "rf" if model == "random_forest" else model
+    prefix = RUN_PREFIX.get(model, model)
     ids = [f"{prefix}_c{n_classes}_final_s{s}" for s in config.SEEDS]
     return rows[rows["run_id"].isin(ids)]
 

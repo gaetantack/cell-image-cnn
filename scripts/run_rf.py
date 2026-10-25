@@ -22,10 +22,10 @@ from src.splits import load_split
 CLASS_NAMES = {4: config.CLASSES_4, 7: config.CLASSES_7}
 
 
-def load_features(n_classes):
+def load_features(n_classes, feature_set=config.RF_FEATURE_SET):
     """Feature matrix (rows in load_dataset() order) and labels for the chosen label set."""
     df = pd.read_parquet(config.FEATURES_FILE).sort_values("row")
-    X = df[list(config.FEATURE_SETS[config.RF_FEATURE_SET])].to_numpy(np.float64)
+    X = df[list(config.FEATURE_SETS[feature_set])].to_numpy(np.float64)
     y = df["label_7"].to_numpy()
     if n_classes == 4:
         y = np.asarray(config.MAP_7_TO_4)[y]
@@ -40,19 +40,20 @@ def make_rf(params, seed):
     )
 
 
-def run(params, n_classes, seed, run_id, save_preds=False):
+def run(params, n_classes, seed, run_id, save_preds=False, feature_set=config.RF_FEATURE_SET,
+        model_name="random_forest"):
     if has_run(run_id):
         print(f"skip {run_id} (already in log)")
         return
-    X, y = load_features(n_classes)
+    X, y = load_features(n_classes, feature_set)
     train, val = load_split("train"), load_split("val")
     t0 = time.perf_counter()
     rf = make_rf(params, seed).fit(X[train], y[train])
     train_time = time.perf_counter() - t0
     pred = rf.predict(X[val])
     m = evaluate(y[val], pred, CLASS_NAMES[n_classes])
-    settings = {"feature_set": config.RF_FEATURE_SET, "n_estimators": config.RF_N_ESTIMATORS, **params}
-    log_experiment("random_forest", n_classes, "val", seed, settings, m, train_time, run_id=run_id, device="cpu")
+    settings = {"feature_set": feature_set, "n_estimators": config.RF_N_ESTIMATORS, **params}
+    log_experiment(model_name, n_classes, "val", seed, settings, m, train_time, run_id=run_id, device="cpu")
     if save_preds:
         config.PREDS_DIR.mkdir(parents=True, exist_ok=True)
         np.savez(config.PREDS_DIR / f"{run_id}.npz", y_true=y[val], y_pred=pred, rows=val)

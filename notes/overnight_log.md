@@ -14,3 +14,4 @@ Branch `overnight-2026-10-25`. All numbers are VALIDATION numbers. Test split ne
 | 22:24 | `src/models.py`, `src/train.py`; smoke tests for all 3 models pass on MPS | SmallCNN 389,636 params; ResNet18 11,175,428 | launch queue |
 | 22:24 | Launched `scripts/queue_phase3.sh` (all of phase 3: tune 3 families, finals 4 cl., finals 7 cl.) | SmallCNN real speed ≈ 17 s/epoch (bs 64) | tests |
 | 22:27 | `tests/test_models.py` (12 tests) | pytest 33 passed | RF importance figure |
+| 22:35 | RF permutation importance (`scripts/fig_rf_importance.py`, `src/plotting.py`) + draft paragraph `notes/paper_draft/results_rf.md` | area dominates (−0.113 macro-F1), then Ch3 GLCM correlation, axis lengths, Ch6 GLCM energy | methods draft while queue runs |

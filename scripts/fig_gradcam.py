@@ -93,7 +93,7 @@ save(fig, "gradcam_val")
 row = int(np.flatnonzero(cell_ids == ARTEFACT_CELL)[0])
 if row in set(load_split("train").tolist()):
     cam = cam_for_row(row)
-    fig, axes = plt.subplots(1, 3, figsize=(8.5 * CM, 3.2 * CM))
+    fig, axes = plt.subplots(1, 3, figsize=(8.5 * CM, 3.6 * CM))
     axes[0].imshow(X[row, 0], cmap="gray")
     axes[0].imshow(cam, cmap="inferno", alpha=0.5, vmin=0, vmax=1)
     axes[1].imshow(X[row, 0], cmap="gray")
@@ -102,5 +102,5 @@ if row in set(load_split("train").tolist()):
         ax.set_title(t)
         ax.set_axis_off()
     fig.suptitle(f"Cell {ARTEFACT_CELL} ({config.CLASSES_7[y7[row]]}, TRAINING cell): heat in border "
-                 f"{border_fraction(cam):.2f} (ring area {ring_share:.2f})", fontsize=7)
+                 f"{border_fraction(cam):.2f} (ring area {ring_share:.2f})", fontsize=7, y=1.12)
     save(fig, "gradcam_cell30439_train")

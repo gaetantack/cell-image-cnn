@@ -39,7 +39,7 @@ spaces = {}
 F_all, _ = load_features(7)
 imputer = SimpleImputer(strategy="median").fit(F_all[train])  # medians from training cells only
 scaler = StandardScaler().fit(imputer.transform(F_all[train]))  # mean and SD from training cells only
-spaces["Random forest features (28)"] = scaler.transform(imputer.transform(F_all[val]))
+spaces["Hand-crafted features"] = scaler.transform(imputer.transform(F_all[val]))
 for model in ("smallcnn", best_resnet(log)):
     if model is None or not (config.CHECKPOINT_DIR / f"{model}_c4_final_s0_best.pt").exists():
         print(f"skip {model}: no final 4-class seed-0 checkpoint")
@@ -48,7 +48,9 @@ for model in ("smallcnn", best_resnet(log)):
     spaces[f"{MODEL_LABELS[model]} embedding"] = embeddings(net, X_img[val], mean, sd)
 
 set_style()
-colors = plt.get_cmap("viridis")(np.linspace(0, 0.95, len(config.CLASSES_7)))
+# Ordered colour map; G1, S and G2 are spread over the first half so the three large classes are easy to
+# tell apart, the four mitotic phases share the second half
+colors = plt.get_cmap("viridis")([0.0, 0.22, 0.45, 0.62, 0.75, 0.87, 0.97])
 fig, axes = plt.subplots(1, len(spaces), figsize=(TWO_COLUMNS, 6.5 * CM), squeeze=False)
 coords = {}
 for ax, (name, Z) in zip(axes[0], spaces.items()):
@@ -66,7 +68,7 @@ for ax, (name, Z) in zip(axes[0], spaces.items()):
     ax.set_ylabel("UMAP 2")
 axes[0][-1].legend(loc="center left", bbox_to_anchor=(1.0, 0.5), frameon=False, markerscale=3)
 fig.suptitle("UMAP of validation cells, coloured by cell cycle phase (networks trained on 4 classes)",
-             fontsize=7, y=1.03)
+             fontsize=7, y=1.1)
 save(fig, "umap_val")
 np.savez(config.RESULTS_DIR / "umap_val.npz", rows=val, y7=y_val,
          **{name.split(" ")[0].lower() + f"_{i}": xy for i, (name, xy) in enumerate(coords.items())})

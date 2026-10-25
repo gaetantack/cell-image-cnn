@@ -96,3 +96,10 @@ CNN_GRID = [
 ]
 # Learning curve (RQ2): stratified fraction of the TRAIN split, seeded by the run seed
 LABEL_FRACTIONS = (0.01, 0.05, 0.2, 1.0)
+
+# Interpretation (src/interpret.py, scripts/fig_umap.py, scripts/fig_gradcam.py)
+GRADCAM_BORDER_PX = 8  # outer ring used to measure heat on the image border
+GRADCAM_CELLS_PER_CLASS = 4  # cells shown per class in the Grad-CAM grid
+UMAP_N_NEIGHBORS = 30
+UMAP_MIN_DIST = 0.3
+UMAP_SEED = 0

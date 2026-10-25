@@ -29,6 +29,13 @@ def final_runs(log, model, n_classes):
     return rows[rows["run_id"].isin(ids)]
 
 
+def best_resnet(log):
+    """The ResNet18 variant with the higher mean 4-class val macro-F1 (only if all 3 final seeds exist)."""
+    scores = {m: final_runs(log, m, 4)["macro_f1"].mean() for m in ("resnet18_pretrained", "resnet18_scratch")
+              if len(final_runs(log, m, 4)) == len(config.SEEDS)}
+    return max(scores, key=scores.get) if scores else None
+
+
 def mean_sd(values):
     values = np.asarray(values, dtype=float)
     return values.mean(), (values.std(ddof=1) if len(values) > 1 else np.nan)

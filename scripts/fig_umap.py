@@ -14,7 +14,7 @@ import umap
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 
-from scripts.make_results_table import final_runs
+from scripts.make_results_table import best_resnet
 from scripts.run_rf import load_features
 from src import config
 from src.data import load_dataset
@@ -22,12 +22,6 @@ from src.experiments import read_log
 from src.interpret import embeddings, load_trained
 from src.plotting import CM, MODEL_LABELS, TWO_COLUMNS, save, set_style
 from src.splits import load_split
-
-
-def best_resnet(log):
-    scores = {m: final_runs(log, m, 4)["macro_f1"].mean() for m in ("resnet18_pretrained", "resnet18_scratch")
-              if len(final_runs(log, m, 4)) == len(config.SEEDS)}
-    return max(scores, key=scores.get) if scores else None
 
 
 log = read_log()

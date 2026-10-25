@@ -106,14 +106,16 @@ def class_weights(y_train, n_classes):
     return torch.tensor(len(y_train) / (n_classes * counts), dtype=torch.float32)
 
 
-def epoch_order(y_train, balance, gen):
-    """Order of training cells for one epoch. 'oversample' draws cells with probability 1/class count
-    (with replacement), so every class is seen about equally often; otherwise a random permutation."""
+def epoch_order(y_train, balance, gen, n_draws):
+    """Order of training cells for one epoch (n_draws cells). 'oversample' draws cells with probability
+    1/class count (with replacement), so every class is seen about equally often; otherwise random
+    permutations of the training cells, repeated if n_draws is larger than the number of cells."""
     n = len(y_train)
     if balance == "oversample":
         p = 1.0 / np.bincount(y_train)[y_train]
-        return torch.multinomial(torch.tensor(p / p.sum()), n, replacement=True, generator=gen)
-    return torch.randperm(n, generator=gen)
+        return torch.multinomial(torch.tensor(p / p.sum()), n_draws, replacement=True, generator=gen)
+    n_repeats = int(np.ceil(n_draws / n))
+    return torch.cat([torch.randperm(n, generator=gen) for _ in range(n_repeats)])[:n_draws]
 
 
 @torch.no_grad()
@@ -160,10 +162,14 @@ def main(argv=None):
     # Data: train and val rows only
     X, y, _ = load_dataset(args.classes)
     train, val = load_split("train"), load_split("val")
+    # One "epoch" always shows as many images as the full training split has cells, so a run on a
+    # small label fraction gets the same number of gradient steps as a full run (its cells repeat).
+    samples_per_epoch = len(train)
     train = subsample_train(train, y, args.label_fraction, args.seed)
     if args.smoke_test:
         rng = np.random.default_rng(0)
         train, val = np.sort(rng.choice(train, 256, replace=False)), np.sort(rng.choice(val, 128, replace=False))
+        samples_per_epoch = len(train)
     mean, sd = channel_stats(X[train])
     mean, sd = mean.to(device), sd.to(device)
     X_train = torch.from_numpy(X[train]).to(device)  # kept as uint8 on the device to save memory
@@ -175,7 +181,7 @@ def main(argv=None):
     weight = class_weights(y_train_np, args.classes).to(device) if args.balance == "weighted" else None
     loss_fn = nn.CrossEntropyLoss(weight=weight)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    steps_per_epoch = int(np.ceil(len(train) / args.batch_size))
+    steps_per_epoch = int(np.ceil(samples_per_epoch / args.batch_size))
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.epochs * steps_per_epoch)
 
     ckpt_dir = config.CHECKPOINT_DIR if not args.smoke_test else config.CHECKPOINT_DIR / "smoke"
@@ -197,7 +203,7 @@ def main(argv=None):
     for epoch in range(start_epoch, args.epochs):
         t0 = time.perf_counter()
         model.train()
-        order = epoch_order(y_train_np, args.balance, gen)
+        order = epoch_order(y_train_np, args.balance, gen, samples_per_epoch)
         total_loss = 0.0
         for i in range(0, len(order), args.batch_size):
             idx = order[i:i + args.batch_size].to(device)
@@ -237,7 +243,8 @@ def main(argv=None):
         "lr": args.lr, "weight_decay": args.weight_decay, "batch_size": args.batch_size,
         "max_epochs": args.epochs, "epochs_run": len(history), "best_epoch": best_epoch,
         "augment": args.augment, "balance": args.balance, "label_fraction": args.label_fraction,
-        "n_train": len(train), "n_params": count_parameters(model), "run_tag": args.run_tag,
+        "n_train": len(train), "samples_per_epoch": samples_per_epoch,
+        "n_params": count_parameters(model), "run_tag": args.run_tag,
         "input_size": getattr(model, "input_size", config.IMAGE_SIZE),
     }
     log_experiment(args.model, args.classes, "val", args.seed, settings, m, elapsed,

@@ -78,3 +78,13 @@ def test_train_smoke_run_finishes(model):
     from src.train import main
     m = main(["--model", model, "--smoke-test", "--device", "cpu"])
     assert 0 <= m["macro_f1"] <= 1
+
+
+def test_epoch_order_repeats_small_training_sets():
+    from src.train import epoch_order
+    y = np.array([0, 0, 0, 1, 1, 2])
+    gen = torch.Generator().manual_seed(0)
+    order = epoch_order(y, "weighted", gen, n_draws=15)
+    assert len(order) == 15
+    assert sorted(order[:6].tolist()) == list(range(6))  # first pass = each cell once
+    assert len(epoch_order(y, "oversample", gen, n_draws=15)) == 15

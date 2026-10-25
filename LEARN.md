@@ -42,3 +42,31 @@ Three columns added: `run_id` (a unique name per run, so a queue can skip finish
 ### `scripts/fig_umap.py` — RQ4
 UMAP of validation cells in three spaces (hand-crafted features, SmallCNN embedding, ResNet18 embedding), coloured by the 7 phases although the networks were trained on 4 classes. If the phases appear in cell-cycle order along a path, the continuous cycle is recoverable from features learnt for a discrete task.
 - **Why standardise the hand-crafted features:** UMAP uses distances; without scaling, area (hundreds of pixels) would dominate GLCM values (0–1).
+
+### `scripts/run_rf_raw_dark.py` — RQ5 side experiment for the forest
+Retrains the selected random forest on `raw_dark` (the main features plus the raw darkfield mean and percentiles). The raw darkfield level depends on the image background, and the background differs by phase.
+- **How to read it:** if adding background-dependent features raises the score, the forest can profit from a shortcut. Validation result: +0.015 macro-F1 (0.647 vs 0.632), a small but consistent gain over 3 seeds.
+
+### `scripts/make_results_table.py`, `scripts/make_table1.py`, `scripts/fig_model_comparison.py`, `scripts/fig_confusion.py`
+They read `results/experiments.csv` (and saved predictions) and write the tables and figures. Nothing is typed in by hand. The "final" runs of each model are identified by their run_id (`<model>_c<classes>_final_s<seed>`).
+- **Why mean ± SD over seeds:** a single run can be lucky; the SD shows how much the result moves when only the random seed changes (initialisation, batch order, augmentation).
+- **Why row-normalised confusion matrices:** each row then shows the recall of one true class and where its errors go. Raw counts would be dominated by G1.
+
+### `scripts/queue_phase3.sh`, `scripts/queue_phase5.sh`, `scripts/best_cnn_config.py`
+Shell scripts that run all training jobs one after another in the background, so the work continues even if the chat stops. Each run is skipped if its run_id is already logged, and resumes from its last checkpoint if it was interrupted. `best_cnn_config.py` reads the 12 tuning rows of a model family and prints the arguments of the best one.
+- **Why the same 12-configuration grid for every CNN:** RQ1/RQ2 compare model families; if one family got more tuning it could win just because of that.
+- **Why cap epochs (4 for tuning, 12 for final runs):** one laptop GPU, one night. The cap is identical for all families, so the comparison stays fair, but all CNN numbers are probably a bit below what longer training would give.
+
+### Learning curve (`--label-fraction`, `scripts/fig_learning_curve.py`)
+The model trains on a stratified 1%, 5% or 20% subset of the training cells (the validation set stays complete). One "epoch" always shows as many images as the full training set has, so the small subsets are repeated many times.
+- **Why equal gradient steps:** with a fixed number of epochs, a 1% run would get 100× fewer weight updates, and the curve would mostly measure "too little training", not "too few labels".
+- **Why stratified:** with 1% (226 cells) a random subset could contain almost no mitotic cells (about 5 are expected).
+
+### `scripts/fig_ablation.py` — RQ3 (preliminary)
+Six SmallCNN runs: augmentation none/basic × balancing none/weighted/oversample, seed 0 only.
+- **Weighted loss vs oversampling:** both make rare classes count more. Weighting multiplies their loss; oversampling shows their images more often (with repeats). With augmentation, repeated mitotic images are at least rotated/flipped differently each time.
+
+### `scripts/pseudotime.py` — RQ4, simplest pseudotime
+Takes the first principal component (PC1) of each feature space as a 1-D "time" axis and measures with Spearman's ρ whether it orders the cells G1 → S → G2 → mitosis.
+- **Why Spearman:** phase order is a ranking, not a number on a scale; Spearman only uses ranks.
+- **Caveat to say in the oral:** the CNN was trained to separate G1, S, G2 and mitosis, so an embedding that orders those four is partly what we trained for. The interesting part is what it does with phases it was never told apart (pro/meta/ana/telo, all "mitosis") and whether the order is continuous within a class.

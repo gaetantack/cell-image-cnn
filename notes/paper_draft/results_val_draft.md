@@ -30,15 +30,15 @@ With the same tuning grid and epoch caps, ResNet18 trained from scratch reached 
 
 ## RQ4 — Is the continuous cell cycle visible in the learned features?
 
-In a UMAP of the SmallCNN embedding of the validation cells, the cells lie along an arc in the order G1 → S → G2 → mitosis (Fig. umap_val). The network was only trained on the 4 classes, not on the 7 phases. In the hand-crafted feature space, the phases overlap more.
+In UMAPs of the CNN embeddings of the validation cells, the cells lie along an arc in the order G1 → S → G2 → mitosis (Fig. umap_val). The arc is clearest for the pretrained ResNet18, where G1 and G2 occupy the two ends and the mitotic cells sit at the G2 end. The networks were trained only on the 4 classes, not on the 7 phases. In the hand-crafted feature space, G1 and G2 lie at opposite sides, but S and mitotic cells are mixed in with them.
 
-The first principal component (PC1, fitted on training cells) served as a simple pseudotime. Its Spearman correlation with phase order (G1 = 0 … telophase = 6) on validation cells was 0.45 for the hand-crafted features and 0.83 for the SmallCNN embedding (Fig. pseudotime_val; one run, seed 0). Part of this is expected by construction: the network was trained to separate G1, S, G2 and mitosis. [PENDING: same for the best ResNet18.]
+The first principal component (PC1, fitted on training cells) served as a simple pseudotime. Its Spearman correlation with phase order (G1 = 0 … telophase = 6) on validation cells was 0.45 for the hand-crafted features, 0.83 for the SmallCNN embedding and 0.86 for the pretrained ResNet18 embedding (Fig. pseudotime_val; seed-0 runs). Part of this is expected by construction, because the networks were trained to separate G1, S, G2 and mitosis. Correlations with the 4-class order are identical to three decimals, since only 16 validation cells are in metaphase, anaphase or telophase.
 
 *Take-home (Fig. umap_val):* the CNN embedding orders cells along the cell cycle, though it was only trained on discrete classes.
 
 ## RQ5 — Does the network look at the cell?
 
-The SmallCNN numbers below come from the seed-0 final run. Grad-CAM maps for the true 4-class label were computed for all validation cells (Fig. gradcam_val; results/gradcam_val_summary.csv). For each phase, the median share of the heat inside the brightfield cell mask was:
+*SmallCNN (seed 0; `python -m scripts.fig_gradcam --model smallcnn`, results/gradcam_val_summary_smallcnn.csv).* Grad-CAM maps for the true 4-class label were computed for all validation cells (Fig. gradcam_val; results/gradcam_val_summary.csv). For each phase, the median share of the heat inside the brightfield cell mask was:
 
 | Phase | Cells | Heat in mask | Mask area | Heat in border ring | Ring area |
 |---|---|---|---|---|---|
@@ -58,6 +58,6 @@ For the forest, adding the raw darkfield intensity levels, which track the backg
 
 The last edit is the control. Copying a ring from a cell of a different class gave almost the same scores: −0.014, +0.003 and +0.012 relative to the same-class copy. The drops therefore come from the edit itself (an unnatural seam at the ring edge, or parts of the donor cell inside the ring), not from losing background information that belongs to the right class. Within the precision of this test, we find no evidence that the CNNs use a phase-specific background in the border ring. The networks are, however, sensitive to changes there, and they then predict mitosis more often (mitosis recall rises with the common-brightness and both swap edits). The Grad-CAM border heat for S phase thus does not seem to reflect a background shortcut. Zero padding remains a possible cause, untested. One seed, one random draw of donor cells.
 
-[PENDING: Grad-CAM for the best model (probably ResNet18-pretrained); its maps are 4 × 4 before upsampling, so they are coarser.]
+*Best model (pretrained ResNet18, seed 0).* The figure `gradcam_val` was remade with the best CNN by mean 4-class validation macro-F1. Its heat lies on the cell for every phase. The median share of heat inside the mask is 0.36–0.49, against a mask area of 0.11–0.19. The share in the border ring is 0.06–0.12 (0.22 for the 4 telophase cells), far below the ring's 0.43 of the area. The S-phase border pattern of SmallCNN does not occur here. For G1, S and G2, the heat often peaks at the same spot at the lower right of the cell edge, whatever the cell's orientation. This may be a property of the very coarse 4 × 4 Grad-CAM grid rather than of the cells; we have not tested it. For mitotic cells the heat covers the whole cell, and for telophase both daughter cells.
 
-*Take-home (Fig. gradcam_val):* for most phases the network looks at the cell. For S phase the heat lies at the image border, but swapping the border between classes does not change the predictions, so we found no sign that the CNNs use a phase-specific background.
+*Take-home (Fig. gradcam_val):* the best network (pretrained ResNet18) looks at the cell in every phase. For SmallCNN, the S-phase heat lies at the image border, but swapping the border between classes does not change the predictions, so we found no sign that the CNNs use a phase-specific background.

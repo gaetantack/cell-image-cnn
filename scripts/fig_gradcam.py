@@ -9,7 +9,12 @@ Numbers (results/gradcam_val_summary.csv), for ALL validation cells:
   next to mask_area_share, the share of the image the mask covers (what uniform heat would give);
 - heat_in_border: share of the heat in the outer GRADCAM_BORDER_PX pixels, next to the ring's area share.
 Also figures/gradcam_cell30439_train.png: training cell 30439 (corner artefact, PROJECT.md Observations).
+
+Default: the best CNN. `--model smallcnn` makes the same outputs for another CNN, with "_smallcnn" added to
+every file name; `--device cpu` runs on the CPU (e.g. while the GPU is busy with training).
 """
+import argparse
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -27,9 +32,14 @@ from src.train import to_input
 
 ARTEFACT_CELL = 30439
 
-model_name = best_cnn(read_log())
+parser = argparse.ArgumentParser()
+parser.add_argument("--model", default=None, help="CNN to explain (default: best CNN)")
+parser.add_argument("--device", default=None, help="cpu or mps (default: best available)")
+args = parser.parse_args()
+model_name = args.model or best_cnn(read_log())
+suffix = f"_{args.model}" if args.model else ""
 run_id = f"{model_name}_c4_final_s0"
-model, mean, sd = load_trained(run_id)
+model, mean, sd = load_trained(run_id, device=torch.device(args.device) if args.device else None)
 X, y7, cell_ids = load_dataset(7)
 y4 = np.asarray(config.MAP_7_TO_4)[y7]
 val = load_split("val")
@@ -54,8 +64,8 @@ summary = per_cell.groupby("phase", sort=False)[["heat_in_mask", "mask_area_shar
                                                  "border_area_share"]].median().round(3)
 summary.insert(0, "n_cells", per_cell.groupby("phase", sort=False).size())
 summary = summary.reindex(config.CLASSES_7)
-summary.to_csv(config.RESULTS_DIR / "gradcam_val_summary.csv")
-per_cell.to_csv(config.RESULTS_DIR / "gradcam_val_per_cell.csv", index=False)
+summary.to_csv(config.RESULTS_DIR / f"gradcam_val_summary{suffix}.csv")
+per_cell.to_csv(config.RESULTS_DIR / f"gradcam_val_per_cell{suffix}.csv", index=False)
 print(f"Grad-CAM, {run_id}, validation cells (medians per phase):\n{summary}")
 
 # 2. Grid figure
@@ -87,7 +97,7 @@ for j in range(k):
 fig.suptitle(f"Grad-CAM for the true 4-class label, {MODEL_LABELS[model_name]} (seed 0), validation cells",
              fontsize=7, y=1.0)
 fig.subplots_adjust(wspace=0.05, hspace=0.35)
-save(fig, "gradcam_val")
+save(fig, f"gradcam_val{suffix}")
 
 # 3. The training cell with a corner artefact (not a validation cell; shown for the shortcut check only)
 row = int(np.flatnonzero(cell_ids == ARTEFACT_CELL)[0])
@@ -103,4 +113,4 @@ if row in set(load_split("train").tolist()):
         ax.set_axis_off()
     fig.suptitle(f"Cell {ARTEFACT_CELL} ({config.CLASSES_7[y7[row]]}, TRAINING cell): heat in border "
                  f"{border_fraction(cam):.2f} (ring area {ring_share:.2f})", fontsize=7, y=1.12)
-    save(fig, "gradcam_cell30439_train")
+    save(fig, f"gradcam_cell30439_train{suffix}")

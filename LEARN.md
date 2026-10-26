@@ -40,6 +40,10 @@ Three columns added: `run_id` (a unique name per run, so a queue can skip finish
 - **Why the last conv layer:** it has the most class-specific features while still keeping a (coarse) spatial map: 8 × 8 for SmallCNN, 4 × 4 for ResNet18 at 128 px — so ResNet maps are blurrier.
 - **Why measure "heat inside the mask" against "mask area":** if the heat were spread evenly, the share inside the mask would equal the mask's share of the image. Clearly more means the network looks at the cell; about equal or less suggests background/border use.
 
+### `scripts/fig_gradcam.py` — RQ5 figure and numbers
+Makes the Grad-CAM grid (4 random validation cells per phase: heat map, brightfield, darkfield) for the best CNN, the heat-in-mask / heat-in-border summary for all validation cells, and the map for training cell 30439. `--model smallcnn` makes the same for SmallCNN (files end in `_smallcnn`).
+- **Why both models:** the SmallCNN maps (8 × 8 grid) are sharper; the ResNet18 maps (4 × 4 grid) belong to the best model. They disagree for S phase (SmallCNN: border; ResNet18: cell).
+
 ### `scripts/fig_umap.py` — RQ4
 UMAP of validation cells in three spaces (hand-crafted features, SmallCNN embedding, ResNet18 embedding), coloured by the 7 phases although the networks were trained on 4 classes. If the phases appear in cell-cycle order along a path, the continuous cycle is recoverable from features learnt for a discrete task.
 - **Why standardise the hand-crafted features:** UMAP uses distances; without scaling, area (hundreds of pixels) would dominate GLCM values (0–1).

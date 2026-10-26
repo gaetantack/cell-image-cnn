@@ -31,6 +31,15 @@ table = pd.DataFrame(rows)
 table.to_csv(config.RESULTS_DIR / "learning_curve_val.csv", index=False)
 print(table.to_string(index=False))
 
+
+
+def seed_text(t):
+    """Legend note on how many seeds each point has."""
+    if t["n_seeds"].nunique() == 1:
+        return f"{t['n_seeds'].iloc[0]} seeds"
+    return "seed 0; 100%: 3 seeds"
+
+
 set_style()
 fig, ax = plt.subplots(figsize=(ONE_COLUMN, 6 * CM))
 for model in MODELS:
@@ -39,7 +48,7 @@ for model in MODELS:
         continue
     ax.errorbar(t["label_fraction"] * 100, t["macro_f1_mean"], yerr=t["macro_f1_sd"].fillna(0),
                 color=MODEL_COLORS[model], marker="o", ms=4, lw=1.5, capsize=2, elinewidth=0.8,
-                label=f"{MODEL_LABELS[model]} (seeds: {t['n_seeds'].min()}–{t['n_seeds'].max()})")
+                label=f"{MODEL_LABELS[model]} ({seed_text(t)})")
 rf = log[log["run_id"].isin([f"rf_c4_final_s{s}" for s in config.SEEDS])]["macro_f1"].mean()
 ax.axhline(rf, color=MODEL_COLORS["random_forest"], lw=0.8, ls="--", label="Random forest, 100%")
 ax.set_xscale("log")

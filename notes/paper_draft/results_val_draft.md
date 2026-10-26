@@ -1,6 +1,6 @@
 # Results (DRAFT)
 
-> **Validation results — not the final test numbers.** Every number below is a validation-set number from `results/experiments.csv` (tables: `results/table_val_summary.md`). The test set has not been touched. Claude wrote this overnight on 2026-10-25/26; check every sentence. Places still waiting for a run are marked [PENDING: ...].
+> **Validation results — not the final test numbers.** Every number below is a validation-set number from `results/experiments.csv` (tables: `results/table_val_summary.md`). The test set has not been touched. Claude wrote this overnight on 2026-10-25/26; check every sentence. 
 
 All models were selected and early-stopped on the validation set, so these numbers are optimistic estimates. Mean ± SD over seeds 0, 1 and 2 unless stated otherwise. The validation set has 4,840 cells: 2,150 G1, 1,293 S, 1,290 G2 and 107 mitotic (91 prophase, 10 metaphase, 2 anaphase, 4 telophase).
 
@@ -20,7 +20,14 @@ On the 7-class task the forest reached 0.559 ± 0.004. Recall on single mitotic 
 
 With the same tuning grid and epoch caps, ResNet18 trained from scratch reached at most 0.649 in tuning (4 epochs, seed 0). Its pretrained version reached 0.722 in the same setting. In the final runs, the scratch ResNet18 reached 0.696 ± 0.012, compared with 0.761 ± 0.006 for the pretrained network. That is a difference of 0.065, about five times the larger SD. The scratch network matched SmallCNN (0.687 ± 0.006) despite 29 times more parameters, and its mitosis recall (0.64 ± 0.11) was also at the SmallCNN level rather than the pretrained level (0.83 ± 0.01). Two of the three scratch runs reached their best validation score in the last two of their 12 epochs. The scratch model is therefore the one most limited by the epoch cap.
 
-[PENDING: learning curve at 1 / 5 / 20 / 100% of the training labels, SmallCNN (Fig. learning_curve_val).]
+*Learning curve (Fig. learning_curve_val; results/learning_curve_val.csv).* Each subset run had as many gradient steps as a full run. Seeds: SmallCNN 3 at every fraction; both ResNet18 variants seed 0 only for the subsets. Validation macro-F1 at 1 / 5 / 20 / 100% of the labelled training cells:
+- SmallCNN: 0.547 ± 0.015 / 0.631 ± 0.016 / 0.689 ± 0.008 / 0.687 ± 0.006
+- pretrained ResNet18: 0.552 / 0.660 / 0.739 / 0.761 ± 0.006
+- scratch ResNet18: 0.539 / 0.609 / 0.678 / 0.696 ± 0.012
+
+At 1% (225 cells, about 5 of them mitotic) all three networks were within 0.015 of each other. With 5% of the labels the pretrained ResNet18 already exceeded the random forest trained on all labels (0.632). The advantage of pretraining appeared from 20% onwards, and SmallCNN did not improve beyond 20%. Pretraining therefore did not help most when labels were scarcest. The single-seed points carry a seed spread of about 0.015 (SmallCNN SD at 1–5%), so the differences at 1% are within noise.
+
+*Take-home (Fig. learning_curve_val):* on validation, ImageNet pretraining helps once a few thousand labelled cells are available, while a small network saturates at about 4,500 cells.
 
 *Caveat:* the epoch cap (12 epochs for final runs) favours models that start closer to a good solution. With longer training the scratch model may close part of the gap.
 

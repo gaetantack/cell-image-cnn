@@ -12,7 +12,7 @@ Branch `overnight-2026-10-25` (pushed to origin; not merged). Every number here 
 | 4 Results table, Table 1, model comparison, confusion matrices (4 + 7 classes) | done |
 | 5a UMAP (RQ4) | done |
 | 5b Grad-CAM (RQ5), incl. training cell 30439 | done (best CNN + SmallCNN) |
-| 5c Learning curve | [LC_STATUS] |
+| 5c Learning curve | done: 1/5/20 % for all 3 CNNs with seed 0; SmallCNN also seeds 1–2; ResNet seeds 1–2 skipped (time) |
 | 5d RQ3 ablation (seed 0, preliminary) | done |
 | Extra: PC1 pseudotime (Tier 3, RQ4) | done |
 | Extra: border test with background swap (RQ5) | done |
@@ -22,11 +22,41 @@ Branch `overnight-2026-10-25` (pushed to origin; not merged). Every number here 
 
 ## Validation results (mean ± SD over seeds 0, 1, 2)
 
-[TABLE]
+| Model | 4-class macro-F1 (val) | 4-class mitosis recall (val) | 7-class macro-F1 (val) | Train time 4-cl. (s) |
+|---|---|---|---|---|
+| Chance (majority) | 0.154 | 0.00 | 0.088 | — |
+| Chance (stratified) | 0.257 ± 0.006 | 0.03 | 0.146 ± 0.003 | — |
+| Random forest (28 features) | 0.632 ± 0.001 | 0.26 ± 0.01 | 0.559 ± 0.004 | 7 |
+| RF + raw darkfield levels (side exp.) | 0.647 ± 0.003 | 0.31 ± 0.01 | — | 10 |
+| SmallCNN | 0.687 ± 0.006 | 0.65 ± 0.10 | 0.560 ± 0.007 | 183 |
+| ResNet18 (scratch) | 0.696 ± 0.012 | 0.64 ± 0.11 | 0.468 ± 0.016 | 900 |
+| **ResNet18 (ImageNet)** | **0.761 ± 0.006** | **0.83 ± 0.01** | 0.581 ± 0.042 | 928 |
+
+Full table with all per-class recalls: `results/table_val_summary.md`. Other results (all val):
+- **Learning curve, at 1 / 5 / 20 / 100 % of the labels:**
+  - SmallCNN (3 seeds): 0.547 / 0.631 / 0.689 / 0.687
+  - ResNet18-pretrained (seed 0): 0.552 / 0.660 / 0.739 / 0.761
+  - ResNet18-scratch (seed 0): 0.539 / 0.609 / 0.678 / 0.696
+- **Ablation, SmallCNN, seed 0:**
+  - no augmentation: 0.742 / 0.734 / 0.738 (no balancing / weighted / oversampling)
+  - with augmentation: 0.682 / 0.690 / 0.746
+- **UMAP and PC1 pseudotime:** CNN embeddings order the cells G1 → S → G2 → mitosis. Spearman ρ: hand-crafted 0.45, SmallCNN 0.83, ResNet18-pretrained 0.86.
 
 Figures (all in `figures/`, PNG + PDF, made by scripts in `scripts/`):
 
-[FIGURES]
+| Figure | Script | Shows |
+|---|---|---|
+| `model_comparison_val` | `fig_model_comparison.py` | macro-F1 per model, 4 and 7 classes, single seeds + chance |
+| `confusion_val_4class`, `confusion_val_7class` | `fig_confusion.py` | RF vs best CNN (ResNet18-pretrained), seed 0 |
+| `rf_importance` | `fig_rf_importance.py` | top 15 permutation importances (area dominates) |
+| `learning_curve_val` | `fig_learning_curve.py` | RQ2 |
+| `ablation_val` | `fig_ablation.py` | RQ3 (preliminary) |
+| `umap_val` | `fig_umap.py` | RQ4 |
+| `pseudotime_val` | `pseudotime.py` | RQ4 (Tier 3) |
+| `gradcam_val`, `gradcam_val_smallcnn` | `fig_gradcam.py [--model smallcnn]` | RQ5 |
+| `gradcam_cell30439_train` (+ `_smallcnn`) | `fig_gradcam.py` | the artefact cell (a TRAINING cell, not in val) |
+
+Tables: `results/table_val_summary.md`, `results/table1_methods.md` (= `notes/paper_draft/table1_methods.md`), `results/ablation_val.md`, `results/learning_curve_val.csv`, `results/border_check_val.csv`, `results/orientation_check_val.csv`, `results/gradcam_val_summary*.csv`, `results/pseudotime_val.csv`, `results/rf_importance_val.csv`.
 
 ## Anything suspicious (all checked; none looks like leakage)
 
@@ -84,7 +114,7 @@ Checkpoints (best weights) are in `checkpoints/` (gitignored), per-run logs in `
 
 ## AI-use log notes (for the course's AI-use statement)
 
-- Claude (Opus 5.5, Claude Code) worked autonomously from 22:18 on 25 Oct to [END] on 26 Oct on branch `overnight-2026-10-25`, following the user's overnight prompt, CLAUDE.md and PROJECT.md.
+- Claude (Opus 5.5, Claude Code) worked autonomously from 22:18 on 25 Oct to 06:30 on 26 Oct on branch `overnight-2026-10-25`, following the user's overnight prompt, CLAUDE.md and PROJECT.md.
 - Claude wrote all new code in `src/`, `scripts/` and `tests/` (listed in LEARN.md), ran all experiments, wrote the drafts in `notes/paper_draft/` and this report.
 - All numbers come from `results/experiments.csv` and the scripts. Literature references are left as [CHECK]/[CITE] placeholders and were not looked up.
 - Every interpretation in the drafts needs to be checked by the user before it goes into the paper.

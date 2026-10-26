@@ -18,7 +18,7 @@ On the 7-class task the forest reached 0.559 ± 0.004. Recall on single mitotic 
 
 ## RQ2 — ImageNet transfer vs training from scratch; learning curve
 
-With the same tuning grid and epoch caps, ResNet18 trained from scratch reached at most 0.649 in tuning (4 epochs, seed 0). Its pretrained version reached 0.722 in the same setting. [PENDING: scratch finals, 3 seeds.]
+With the same tuning grid and epoch caps, ResNet18 trained from scratch reached at most 0.649 in tuning (4 epochs, seed 0). Its pretrained version reached 0.722 in the same setting. In the final runs, the scratch ResNet18 reached 0.696 ± 0.012, compared with 0.761 ± 0.006 for the pretrained network. That is a difference of 0.065, about five times the larger SD. The scratch network matched SmallCNN (0.687 ± 0.006) despite 29 times more parameters, and its mitosis recall (0.64 ± 0.11) was also at the SmallCNN level rather than the pretrained level (0.83 ± 0.01). Two of the three scratch runs reached their best validation score in epoch 10 or 11 of 12. The scratch model is therefore the one most limited by the epoch cap.
 
 [PENDING: learning curve at 1 / 5 / 20 / 100% of the training labels, SmallCNN (Fig. learning_curve_val).]
 

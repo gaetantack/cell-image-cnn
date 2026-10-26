@@ -70,3 +70,23 @@ Six SmallCNN runs: augmentation none/basic × balancing none/weighted/oversample
 Takes the first principal component (PC1) of each feature space as a 1-D "time" axis and measures with Spearman's ρ whether it orders the cells G1 → S → G2 → mitosis.
 - **Why Spearman:** phase order is a ranking, not a number on a scale; Spearman only uses ranks.
 - **Caveat to say in the oral:** the CNN was trained to separate G1, S, G2 and mitosis, so an embedding that orders those four is partly what we trained for. The interesting part is what it does with phases it was never told apart (pro/meta/ana/telo, all "mitosis") and whether the order is continuous within a class.
+
+### Examiner questions (practice for the closed-book oral)
+<details>
+<summary>5 likely questions with model answers — try answering first, then open</summary>
+
+**1. Why do you report macro-F1 and not accuracy?**
+Validation has 2,150 G1 cells but only 107 mitotic cells (2%). A model that always says G1 already reaches 44% accuracy (2,150 / 4,840), and one that is good on G1/S/G2 but never predicts mitosis can reach high accuracy while being useless for mitosis. Macro-F1 computes the F1 score of each class separately and averages them with equal weight, so failing on mitosis costs a quarter of the score in the 4-class task. The "Chance (majority)" row shows this: always predicting G1 gives macro-F1 0.154 although its G1 recall is 1.0.
+
+**2. How do you know the CNN does not just learn the image background?**
+Three checks. (a) Grad-CAM: for G1, G2 and mitosis, a much larger share of the heat lies inside the cell mask than the mask's share of the image (e.g. prophase 0.64 of the heat in 0.17 of the area). (b) For S phase the heat is mostly in the border ring (0.44, about the ring's area share 0.43), which is a warning sign we report, not hide. (c) The random-forest side experiment: adding raw darkfield levels, which follow the background, raised macro-F1 by only 0.015. Grad-CAM is a coarse map (8 × 8 or 4 × 4 positions), so it is an indication, not proof.
+
+**3. Why did you never look at the test set, and what is the validation set for?**
+The validation set is used to choose hyperparameters and the best epoch. Every choice made on it makes the validation score slightly optimistic, because we picked what happened to work best on those cells. The test set is touched once, at the end, with everything already fixed, so its score is an honest estimate for new cells. If we tuned on the test set, it would become a second validation set and nothing would remain to give an unbiased estimate.
+
+**4. Why does ImageNet pretraining help on grey-scale cell images that look nothing like ImageNet photos?**
+The first layers of a network trained on ImageNet learn general detectors: edges, blobs, textures at different scales. Those are useful for any image, including cells. Starting from them, the network needs fewer labelled examples and fewer updates to find good features than starting from random weights. In our validation runs, the pretrained ResNet18 beat the same architecture from scratch under the same epoch cap and tuning grid. Part of the gap may shrink with longer training, because our cap (12 epochs) favours the model that starts closer to a good solution.
+
+**5. Why three seeds, and what does the ± mean?**
+Training involves randomness: initial weights (for scratch models), batch order and augmentation. Running with seeds 0, 1, 2 shows how much the score moves when only that randomness changes. The ± is the standard deviation over the three runs. If two models differ by less than about two of these SDs, we should not claim one is better. Three seeds is the minimum for a rough estimate, not a statistical test.
+</details>

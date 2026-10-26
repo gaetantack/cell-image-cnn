@@ -90,3 +90,8 @@ The first layers of a network trained on ImageNet learn general detectors: edges
 **5. Why three seeds, and what does the ± mean?**
 Training involves randomness: initial weights (for scratch models), batch order and augmentation. Running with seeds 0, 1, 2 shows how much the score moves when only that randomness changes. The ± is the standard deviation over the three runs. If two models differ by less than about two of these SDs, we should not claim one is better. Three seeds is the minimum for a rough estimate, not a statistical test.
 </details>
+
+### `scripts/border_check.py` — RQ5 follow-up: does the CNN use the background? (added overnight, extra)
+Changes only the outer 8-pixel ring of each validation image and counts how many predictions change. "Flattened" sets the ring to its own median brightness (keeps the level, removes edges/artefacts); "common" sets it to the same brightness for every cell (removes the level as well).
+- **How to read it:** the cell is in the centre and is not touched, so a network that only looked at the cell would not change its answers. A drop in macro-F1 means it uses the background.
+- **Weak point to admit in the oral:** the edited image has a sharp step at the edge of the ring, which never occurs in real images. A network can react to such an unusual image even if it never used the background. A cleaner test would be to paste the ring of a cell from another phase (background swap).

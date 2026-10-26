@@ -51,6 +51,8 @@ For G1, G2 and prophase the heat is concentrated on the cell, at 3–4 times the
 
 For the forest, adding the raw darkfield intensity levels, which track the background, raised the 4-class macro-F1 from 0.632 ± 0.001 to 0.647 ± 0.003. That gain is small but consistent over seeds.
 
+*Border test (extra analysis, preliminary).* To test whether the networks use the background, we changed only the outer 8-pixel ring of the validation images (`scripts/border_check.py`, results/border_check_val.csv, seed-0 runs). The cell in the centre was left as it was. First, we set the ring to its own median level, which removes structure but keeps the brightness. This changed the macro-F1 of SmallCNN by −0.007 and of the scratch ResNet18 by +0.001, but lowered the pretrained ResNet18 by 0.036 (16% of its predictions changed). Second, we set the ring to one common brightness for all cells (the training median), which also removes the background level. This lowered macro-F1 by 0.065 for SmallCNN, 0.112 for the pretrained ResNet18 and 0.040 for the scratch ResNet18. All three CNNs therefore use the brightness of the background to some degree, and the pretrained ResNet18 most. This is consistent with the phase-dependent darkfield background (PROJECT.md Observations, 2026-10-24). Caveat: the edited images contain an artificial step at the ring edge that real images do not have, which can change predictions on its own. Part of the drop may therefore come from unusual images, not from a lost shortcut.
+
 [PENDING: Grad-CAM for the best model (probably ResNet18-pretrained); its maps are 4 × 4 before upsampling, so they are coarser.]
 
 *Take-home (Fig. gradcam_val):* for most phases the network looks at the cell; for S phase it does not, and this needs a follow-up check.

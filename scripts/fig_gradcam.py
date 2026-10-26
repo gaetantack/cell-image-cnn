@@ -88,12 +88,12 @@ for r, phase in enumerate(config.CLASSES_7):
         cell_axes[0].imshow(cam, cmap="inferno", alpha=0.5, vmin=0, vmax=1)
         cell_axes[1].imshow(X[row, 0], cmap="gray")
         cell_axes[2].imshow(X[row, 1], cmap="gray")
-        cell_axes[1].set_title(f"{cell_ids[row]}", fontsize=5, pad=1)
+        cell_axes[1].set_title(f"{cell_ids[row]}", fontsize=7, pad=1)
     axes[r, 0].text(-0.15, 0.5, phase, transform=axes[r, 0].transAxes, ha="right", va="center")
 for j in range(k):
     for c, label in enumerate(("Grad-CAM", "BF", "DF")):
         axes[0, 3 * j + c].text(0.5, 1.45, label, transform=axes[0, 3 * j + c].transAxes, ha="center",
-                                fontsize=6)
+                                fontsize=7)
 fig.suptitle(f"Grad-CAM for the true 4-class label, {MODEL_LABELS[model_name]} (seed 0), validation cells",
              fontsize=7, y=1.0)
 fig.subplots_adjust(wspace=0.05, hspace=0.35)

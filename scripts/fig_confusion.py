@@ -24,7 +24,7 @@ def best_cnn(log):
 def plot(n_classes, models, seed=0):
     names = CLASS_NAMES[n_classes]
     fig, axes = plt.subplots(1, len(models), figsize=(TWO_COLUMNS * (0.5 if n_classes == 4 else 0.75),
-                                                      (6.5 if n_classes == 4 else 8.5) * CM),
+                                                      (6.5 if n_classes == 4 else 7.2) * CM),
                              squeeze=False)
     for ax, model in zip(axes[0], models):
         run_id = f"{'rf' if model == 'random_forest' else model}_c{n_classes}_final_s{seed}"
@@ -34,7 +34,7 @@ def plot(n_classes, models, seed=0):
         ax.imshow(cm, cmap="Blues", vmin=0, vmax=1)
         for i in range(len(names)):
             for j in range(len(names)):
-                ax.text(j, i, f"{cm[i, j]:.2f}", ha="center", va="center", fontsize=6 if n_classes == 7 else 7,
+                ax.text(j, i, f"{100 * cm[i, j]:.0f}", ha="center", va="center", fontsize=7,
                         color="white" if cm[i, j] > 0.6 else "black")
         labels = [SHORT.get(n, n) for n in names]
         ax.set_xticks(range(len(names)), labels)
@@ -42,8 +42,9 @@ def plot(n_classes, models, seed=0):
         ax.set_xlabel("Predicted")
         ax.set_title(f"{MODEL_LABELS[model]}\nmacro-F1 {m['macro_f1']:.3f}")
         ax.spines[:].set_visible(False)
+        ax.tick_params(length=0)
     axes[0][0].set_ylabel("True (validation)")
-    fig.suptitle(f"Validation confusion matrices, {n_classes} classes, seed {seed} (rows sum to 1)", fontsize=7)
+    fig.suptitle(f"Validation confusion matrices, {n_classes} classes, seed {seed} (% of each true class; rows sum to 100)", fontsize=7)
     fig.tight_layout()
     save(fig, f"confusion_val_{n_classes}class")
 

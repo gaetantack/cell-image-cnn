@@ -27,7 +27,7 @@ for ax, n_classes in zip(axes, (4, 7)):
     for chance, style in (("dummy_majority", ":"), ("dummy_stratified", "--")):
         level = final_runs(log, chance, n_classes)["macro_f1"].mean()
         ax.axhline(level, color=MUTED, lw=0.8, ls=style, label=MODEL_LABELS[chance], zorder=0)
-    ax.set_xticks(range(len(models)), [MODEL_LABELS[m].replace(" (", "\n(") for m in models])
+    ax.set_xticks(range(len(models)), [MODEL_LABELS[m].replace(" (", "\n(").replace("Random forest", "Random\nforest") for m in models])
     ax.set_xlim(-0.6, len(models) - 0.4)
     ax.set_ylim(0, 1)
     ax.set_title(f"{n_classes} classes")

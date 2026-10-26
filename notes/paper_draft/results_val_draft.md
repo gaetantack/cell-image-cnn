@@ -35,13 +35,13 @@ Six SmallCNN runs crossed augmentation (none / basic) with class balancing (none
 
 Mitosis recall: without augmentation 0.57 / 0.64 / 0.53; with augmentation 0.30 / 0.56 / 0.69.
 
-Training *without* augmentation gave a higher macro-F1 (0.734–0.742) than the setting used for all final runs (basic augmentation with weighted loss, 0.690). That difference is far larger than the seed SD of SmallCNN (0.006). With augmentation, balancing mattered: without it, mitosis recall fell to 0.30. Without augmentation, balancing changed little.
+Training *without* augmentation gave a higher macro-F1 (0.734–0.742) than the setting used for all final runs (basic augmentation with weighted loss, 0.690). That difference is far larger than the seed SD of SmallCNN (0.006). Augmentation combined with oversampling, however, reached the same level (0.746) and had the highest mitosis recall (0.69). With augmentation, balancing mattered: without it, mitosis recall fell to 0.30. Without augmentation, balancing changed little. The setting fixed before tuning (basic + weighted) was thus one of the weakest combinations.
 
 *Why augmentation can hurt here (extra check, `scripts/orientation_check.py`).* Our augmentation assumes that a cell image has no preferred orientation. For the darkfield channel this is false: the left half of the image is brighter than the right half in 81% of training images, against 45% for brightfield. The side-scatter light presumably reaches the camera from one direction (instrument geometry, [CHECK: confirm with the BBBC048 / ImageStream description]). The model trained without augmentation uses this direction. On left-right-flipped validation images its macro-F1 fell from 0.742 to 0.608, and its mitosis recall from 0.57 to 0.16. On images flipped top to bottom it fell only to 0.710. The augmented model scored the same on all flipped and rotated images (0.681–0.698). Because the direction is a property of the instrument and identical in all images, it is information the model may legitimately use, not leakage. But 90° rotations and left-right flips remove it.
 
 These results are preliminary: one seed, and the hyperparameters were tuned with augmentation switched on.
 
-*Take-home (Fig. ablation_val):* the rotation/flip augmentation removes a real directional signal in the darkfield images, and on validation SmallCNN does better without it.
+*Take-home (Fig. ablation_val):* the rotation/flip augmentation removes a real directional signal in the darkfield images. Without augmentation, or with augmentation plus oversampling, SmallCNN reached about 0.74 validation macro-F1, against 0.69 for the setting used in all final runs. With one seed, which choice is best remains open.
 
 ## RQ4 — Is the continuous cell cycle visible in the learned features?
 

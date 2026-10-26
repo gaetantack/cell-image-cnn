@@ -37,7 +37,7 @@ md += [f"| {r.augment} | {r.balance} | {r.macro_f1:.3f} | {r.balanced_accuracy:.
 print("\n".join(md))
 
 set_style()
-fig, axes = plt.subplots(1, 2, figsize=(ONE_COLUMN, 4.5 * CM), sharey=True)
+fig, axes = plt.subplots(1, 2, figsize=(ONE_COLUMN, 4.2 * CM), sharey=True)
 for ax, (col, title) in zip(axes, (("macro_f1", "Macro-F1"), ("recall_mitosis", "Mitosis recall"))):
     grid = np.full((len(AUGMENTS), len(BALANCES)), np.nan)
     for r in table.itertuples():
@@ -46,13 +46,15 @@ for ax, (col, title) in zip(axes, (("macro_f1", "Macro-F1"), ("recall_mitosis", 
     for i in range(len(AUGMENTS)):
         for j in range(len(BALANCES)):
             if not np.isnan(grid[i, j]):
-                ax.text(j, i, f"{grid[i, j]:.2f}", ha="center", va="center",
+                ax.text(j, i, f"{grid[i, j]:.3f}" if col == "macro_f1" else f"{grid[i, j]:.2f}", ha="center", va="center",
                         color="white" if grid[i, j] > 0.6 else "black")
-    ax.set_xticks(range(len(BALANCES)), BALANCES)
+    ax.set_xticks(range(len(BALANCES)), ["none", "weight", "over-\nsample"])
+    ax.tick_params(length=0)
     ax.set_xlabel("Class balancing")
     ax.set_title(f"{title} (val)")
     ax.spines[:].set_visible(False)
 axes[0].set_yticks(range(len(AUGMENTS)), AUGMENTS)
 axes[0].set_ylabel("Augmentation")
-fig.suptitle("SmallCNN ablation, seed 0 only (preliminary)", fontsize=7, y=1.05)
+fig.suptitle("SmallCNN ablation, validation, seed 0 only (preliminary)", fontsize=7)
+fig.tight_layout()
 save(fig, "ablation_val")

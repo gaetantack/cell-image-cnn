@@ -8,6 +8,11 @@ whether predictions change. The cell itself sits in the centre and is left as it
                     (keeps the background LEVEL, removes structure such as edges and artefacts)
 - "ring_common":    ring pixels set to one common value per channel, the median ring level over all
                     TRAINING cells (removes the background level too)
+- "ring_same_class":  ring copied from a random other validation cell of the SAME 4-class label
+- "ring_other_class": ring copied from a random validation cell of a DIFFERENT 4-class label
+The two swaps both put a real background with a seam at the ring edge into the image; the only
+difference is whether that background comes from the right class. So "same class" is the control for
+the seam, and the drop from "same class" to "other class" is what the background itself contributes.
 If recall of a class drops a lot when only the ring changes, the network uses the background for it.
 Seed-0 four-class final run of every CNN, run on the CPU (the GPU is used by the training queue).
 Writes results/border_check_val.csv. VALIDATION numbers only.
@@ -41,7 +46,21 @@ flattened = X_val.copy()
 flattened[:, :, ring] = np.round(ring_median[val])[:, :, None].astype(np.uint8)
 common_img = X_val.copy()
 common_img[:, :, ring] = np.round(common)[None, :, None].astype(np.uint8)
-versions = {"original": X_val, "ring_flattened": flattened, "ring_common": common_img}
+
+rng = np.random.default_rng(0)
+labels = y4[val]
+donor_same = np.empty(len(val), int)
+donor_other = np.empty(len(val), int)
+for i, label in enumerate(labels):
+    same = np.flatnonzero(labels == label)
+    donor_same[i] = rng.choice(same[same != i])
+    donor_other[i] = rng.choice(np.flatnonzero(labels != label))
+same_img = X_val.copy()
+same_img[:, :, ring] = X_val[donor_same][:, :, ring]
+other_img = X_val.copy()
+other_img[:, :, ring] = X_val[donor_other][:, :, ring]
+versions = {"original": X_val, "ring_flattened": flattened, "ring_common": common_img,
+            "ring_same_class": same_img, "ring_other_class": other_img}
 
 rows = []
 for model_name in MODEL_NAMES:

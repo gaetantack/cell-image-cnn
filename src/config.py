@@ -60,3 +60,46 @@ SPLIT_SEED = 42
 SPLIT_FRACTIONS = (0.70, 0.15, 0.15)  # train, val, test
 SEEDS = (0, 1, 2)
 TUNING_BUDGET = 12
+
+# Random forest (scripts/run_rf.py). Missing features -> train-set median (see PROJECT.md decisions).
+RF_FEATURE_SET = "main"
+RF_N_ESTIMATORS = 500
+# 12 configurations = TUNING_BUDGET: max_features x min_samples_leaf x class_weight (max_depth unlimited;
+# min_samples_leaf limits tree size instead). Both class_weight options re-weight the rare classes.
+RF_GRID = [
+    {"max_features": mf, "min_samples_leaf": leaf, "class_weight": cw}
+    for mf in ("sqrt", 0.33) for leaf in (1, 5, 20) for cw in ("balanced", "balanced_subsample")
+]
+RF_PERMUTATION_REPEATS = 10
+RF_TOP_FEATURES = 15
+PREDS_DIR = RESULTS_DIR / "preds"  # val predictions per run, for confusion matrices
+
+# CNNs (src/models.py, src/train.py)
+SMALLCNN_CHANNELS = (32, 64, 128, 256)  # output channels of the 4 conv blocks
+SMALLCNN_DROPOUT = 0.3
+RESNET_INPUT_SIZE = 128  # 66 px images are upscaled (bilinear) to this before ResNet18
+CHECKPOINT_DIR = ROOT / "checkpoints"  # gitignored
+LOG_DIR = ROOT / "logs"  # gitignored
+EVAL_BATCH_SIZE = 512
+EARLY_STOP_PATIENCE = 5  # epochs without val macro-F1 improvement before stopping
+# Epoch caps (set by the overnight time budget, 2026-10-25; same for every CNN family)
+TUNE_EPOCHS = 4
+FINAL_EPOCHS = 12
+# Augmentation "basic" (train only): random 90-degree rotation, horizontal/vertical flip, and per-image,
+# per-channel intensity jitter x * (1 + g) + b with g, b uniform in +-AUG_JITTER (in normalised units)
+AUG_JITTER = 0.1
+# CNN tuning grid: 12 configurations = TUNING_BUDGET, same grid for every family.
+# augment = basic and balance = weighted are fixed during tuning (their ablation is RQ3).
+CNN_GRID = [
+    {"lr": lr, "weight_decay": wd, "batch_size": bs}
+    for lr in (1e-4, 5e-4, 2e-3) for wd in (1e-4, 1e-2) for bs in (64, 128)
+]
+# Learning curve (RQ2): stratified fraction of the TRAIN split, seeded by the run seed
+LABEL_FRACTIONS = (0.01, 0.05, 0.2, 1.0)
+
+# Interpretation (src/interpret.py, scripts/fig_umap.py, scripts/fig_gradcam.py)
+GRADCAM_BORDER_PX = 8  # outer ring used to measure heat on the image border
+GRADCAM_CELLS_PER_CLASS = 4  # cells shown per class in the Grad-CAM grid
+UMAP_N_NEIGHBORS = 30
+UMAP_MIN_DIST = 0.3
+UMAP_SEED = 0

@@ -100,6 +100,26 @@ def augment_basic(x, gen):
     return out * (1 + gain.to(x.device)) + bias.to(x.device)
 
 
+def augment_vflip(x, gen):
+    """Random up-down flip and the same small intensity jitter as augment_basic, per image.
+
+    No rotations and no left-right flips: in the darkfield channel the left half of the image is brighter
+    than the right in about 81% of training images (side-scatter light comes from one side of the
+    instrument; scripts/orientation_check.py). Rotations and left-right flips would destroy that fixed
+    direction; an up-down flip keeps it (left stays left).
+    """
+    n = x.shape[0]
+    flip_v = torch.rand(n, generator=gen) < 0.5
+    gain = (torch.rand(n, x.shape[1], 1, 1, generator=gen) * 2 - 1) * config.AUG_JITTER
+    bias = (torch.rand(n, x.shape[1], 1, 1, generator=gen) * 2 - 1) * config.AUG_JITTER
+    fv = flip_v.to(x.device).view(-1, 1, 1, 1)
+    out = torch.where(fv, x.flip(2), x)  # dim 2 = image rows, so this flips top <-> bottom
+    return out * (1 + gain.to(x.device)) + bias.to(x.device)
+
+
+AUGMENTATIONS = {"none": None, "basic": augment_basic, "vflip": augment_vflip}
+
+
 def class_weights(y_train, n_classes):
     """Inverse-frequency weights N / (K * count_k): every class contributes equally to the loss."""
     counts = np.bincount(y_train, minlength=n_classes)
@@ -137,7 +157,7 @@ def parse_args(argv=None):
     p.add_argument("--weight-decay", type=float, default=1e-4)
     p.add_argument("--batch-size", type=int, default=128)
     p.add_argument("--epochs", type=int, default=config.FINAL_EPOCHS)
-    p.add_argument("--augment", choices=("none", "basic"), default="basic")
+    p.add_argument("--augment", choices=tuple(AUGMENTATIONS), default="basic")
     p.add_argument("--balance", choices=("none", "weighted", "oversample"), default="weighted")
     p.add_argument("--label-fraction", type=float, default=1.0)
     p.add_argument("--run-tag", default="manual", help="part of the run_id, e.g. tune03, final, lf0.05")
@@ -208,8 +228,8 @@ def main(argv=None):
         for i in range(0, len(order), args.batch_size):
             idx = order[i:i + args.batch_size].to(device)
             xb = to_input(X_train[idx], mean, sd)
-            if args.augment == "basic":
-                xb = augment_basic(xb, gen)
+            if AUGMENTATIONS[args.augment] is not None:
+                xb = AUGMENTATIONS[args.augment](xb, gen)
             loss = loss_fn(model(xb), y_train[idx])
             opt.zero_grad()
             loss.backward()

@@ -5,7 +5,7 @@ import torch
 
 from src import config
 from src.models import ResNet18, SmallCNN, build_model
-from src.train import augment_basic, class_weights, subsample_train
+from src.train import augment_basic, augment_vflip, class_weights, subsample_train
 
 
 @pytest.fixture(scope="module")
@@ -70,6 +70,27 @@ def test_augment_keeps_shape_and_pixel_content():
     assert out.shape == x.shape
     # rotations and flips only move pixels; jitter changes values by at most ~10%
     assert torch.allclose(out.abs().mean(), x.abs().mean(), rtol=0.2)
+
+
+def test_augment_vflip_never_flips_left_right(monkeypatch):
+    # Image that is different in every row and every column, so each flip gives a distinct result
+    rows = torch.arange(66.0).view(66, 1)
+    cols = torch.arange(66.0).view(1, 66)
+    img = (rows * 100 + cols).expand(2, 66, 66)
+    x = img.unsqueeze(0).repeat(64, 1, 1, 1)
+    gen = torch.Generator().manual_seed(0)
+    monkeypatch.setattr(config, "AUG_JITTER", 0.0)  # no jitter: outputs must be exact copies
+    out = augment_vflip(x, gen)
+    kept = [(o == img).all().item() for o in out]
+    up_down = [(o == img.flip(1)).all().item() for o in out]  # img dims: channel, row, column
+    assert all(k or u for k, u in zip(kept, up_down))  # every output is the original or an up-down flip
+    assert any(kept) and any(up_down)  # both happen
+    assert not any((o == img.flip(2)).all().item() for o in out)  # never a left-right flip
+    # With jitter, the left half stays brighter than the right half in every image (left stays left)
+    monkeypatch.setattr(config, "AUG_JITTER", 0.1)
+    left_bright = torch.cat([torch.full((66, 33), 2.0), torch.full((66, 33), 1.0)], dim=1).expand(16, 2, 66, 66)
+    out = augment_vflip(left_bright.clone(), gen)
+    assert (out[..., :33].mean(dim=(2, 3)) > out[..., 33:].mean(dim=(2, 3))).all()
 
 
 @pytest.mark.skipif(not config.CACHE_FILE.exists(), reason="image cache not present")

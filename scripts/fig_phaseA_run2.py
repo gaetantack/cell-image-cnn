@@ -37,15 +37,14 @@ for ax, (metric, title) in zip(axes, (("macro_f1", "Macro-F1 (val)"), ("mitosis"
             ax.errorbar(x, v.mean(), yerr=v.std(ddof=1) if len(v) > 1 else 0, fmt=marker, ms=4.5,
                         mfc=face, mec=INK, ecolor=INK, elinewidth=0.8, capsize=2,
                         label=f"{bal}" if i == 0 else None)
-            if (aug, bal) == (choice["augment"], choice["balance"]):
-                ax.annotate("chosen", (x, v.mean()), xytext=(0, -14), textcoords="offset points",
-                            ha="center", fontsize=6, color=INK)
     ax.set_xticks(range(len(config.RUN2_AUGMENTS)), config.RUN2_AUGMENTS)
     ax.set_xlim(-0.5, len(config.RUN2_AUGMENTS) - 0.5)
     ax.set_xlabel("Augmentation")
     ax.set_title(title)
-axes[0].legend(title="Balancing", frameon=False, loc="lower left")
-fig.suptitle("SmallCNN, augmentation × balancing, validation, mean ± SD over 3 seeds (small marks: seeds)",
-             fontsize=7)
-fig.tight_layout()
+handles, labels = axes[0].get_legend_handles_labels()
+fig.legend(handles, [f"balancing: {l}" for l in labels], frameon=False, loc="lower center", ncol=2,
+           bbox_to_anchor=(0.5, -0.02))
+fig.suptitle("SmallCNN, augmentation × balancing, validation, mean ± SD over 3 seeds (small marks: seeds)\n"
+             f"chosen by the pre-set rule: {choice['augment']} + {choice['balance']}", fontsize=7)
+fig.tight_layout(rect=(0, 0.08, 1, 1))
 save(fig, "phaseA_val_run2")

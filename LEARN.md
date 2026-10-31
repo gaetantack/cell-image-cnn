@@ -1,5 +1,33 @@
 # LEARN.md — what each file does and why (for the oral exam)
 
+## Added overnight 2026-10-31/11-01, run 2 (by Claude, check every point)
+
+### `src/train.py` — new augmentation option `vflip`
+`--augment vflip` flips each training image top ↔ bottom with probability 0.5 and applies the same small intensity jitter as `basic` (x · (1 + g) + b, g and b uniform in ±0.1). It never rotates and never flips left ↔ right. `none` and `basic` are unchanged. `tests/test_models.py::test_augment_vflip_never_flips_left_right` checks that every output is either the original or its up-down mirror, never the left-right mirror, and that a left-bright image stays left-bright.
+- **Why only up-down:** run 1 found that the darkfield image has a fixed left/right direction (left half brighter in 81% of training images). A left-right flip or a 90° rotation moves the bright side somewhere else, so the network can no longer use the direction. An up-down flip keeps left on the left. In run 1 the no-augmentation model lost little on up-down-flipped validation images (0.742 → 0.710) but a lot on left-right flips (→ 0.608).
+- **Why still augment at all:** flipping and jitter make the training set look bigger and less repetitive, which helps against overfitting, especially for the 500-odd mitotic training cells that the balancing shows again and again.
+- **How it is implemented:** `x.flip(2)` reverses dimension 2 of a (batch, channel, row, column) tensor, i.e. the rows → top and bottom swap. `x.flip(3)` would swap left and right. The random numbers come from the seeded generator, so a run is reproducible.
+
+### Early stopping with patience (`EARLY_STOP_PATIENCE = 6`, was 5)
+After each epoch, the run scores validation macro-F1 and keeps the weights of the best epoch so far. If 6 epochs in a row bring no new best, training stops and the best weights are used.
+- **Why patience and not "stop at the first drop":** val macro-F1 jumps up and down between epochs (in run 1 by up to 0.15 in one ResNet run). One bad epoch says little; 6 bad epochs in a row say the model has stopped improving.
+- **Why 25 epochs max now (12 in run 1):** two of the three run-1 scratch-ResNet finals had their best epoch at or near the last epoch, so 12 was a cap, not convergence. With 25 epochs and early stopping a run only takes longer if it keeps improving. The log records the best epoch and whether a run hit 25, to see whether 25 is still a cap.
+- **Interaction with the learning-rate schedule:** the cosine schedule is planned for the maximum number of epochs (25). A run that stops early never reaches the smallest learning rates. That is the same for every family, so the comparison stays fair.
+- **Price:** choosing the best epoch on validation makes validation numbers a little optimistic. The test set (week 5) gives the honest number.
+
+### Why the run-2 tuning grid was widened
+Run 1 tuned lr ∈ {1e-4, 5e-4, 2e-3}, and every family picked 2e-3, the edge of the grid. A best value at the edge means the real best may lie outside the grid. Run 2 uses lr ∈ {5e-4, 1e-3, 2e-3, 3.5e-3, 5e-3, 1e-2} × weight decay ∈ {1e-4, 1e-2}: still 12 configurations (the tuning budget) and the same grid for all families. Batch size is fixed at 64, because 64 beat 128 in every run-1 pair, so a batch-size axis would have wasted half the budget.
+- **Caveat to say in the oral:** tuning runs last only 4 epochs. With few epochs a high learning rate can look better simply because it gets further in the time given, even if a lower rate would win over 25 epochs. If a family again picks the top value (1e-2), we report it and do not extend further.
+
+### Why the darkfield direction matters (physics and biology)
+The darkfield (Ch6) image is side-scattered light. In an imaging flow cytometer the light that produces this image comes from a laser that hits the cell from the side, and the camera only collects light scattered towards it [CHECK: ImageStream optics, e.g. the instrument manual; not looked up]. A cell is lit from one side, so its scatter pattern, and also the background glow, is stronger on that side. Because the optics are the same for every cell, every image has the same "lit from the left" direction.
+- **Why it is real information, not leakage:** the direction is the same for all cells in training, validation and test; it is not linked to the label. What carries information is *how* a cell scatters light coming from one side: granularity, nucleus shape and condensed chromosomes change side scatter. Turning the image destroys the link between "lit side" and the pattern, so the network has to learn it for every direction from fewer examples.
+- **Limitation:** a model that uses the direction only works for images from an instrument with the same geometry. That is fine for this dataset but should be said in the paper.
+
+### `scripts/choose_aug_bal.py` — Phase A choice rule (RQ3)
+Summarises the 18 SmallCNN runs (augment none/vflip/basic × balance weighted/oversample × seeds 0–2) and picks AUG*/BAL* by a rule fixed before the runs: highest mean val macro-F1; if the best two are within one seed SD, higher mitosis recall; if that is also within one SD, vflip > none > basic, then weighted > oversample. Writes `results/run2_phaseA_val.md` and `results/run2_aug_bal_choice.json`; the queue reads the JSON.
+- **Why a fixed rule:** deciding the rule after seeing the numbers would let us pick what we like (a form of p-hacking).
+
 ## Added overnight 2026-10-25/26 (by Claude, check every point)
 
 ### `scripts/run_rf.py` — random forest baseline (RQ1)

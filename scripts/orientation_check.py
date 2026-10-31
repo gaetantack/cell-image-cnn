@@ -9,7 +9,12 @@ have a fixed orientation even if the cell does not. Two checks:
    final SmallCNN (with augmentation) are evaluated on VALIDATION images that are rotated by 90/180/270
    degrees or flipped. A model that relies on orientation loses accuracy on rotated images.
 Runs on the CPU. Writes results/orientation_check_val.csv. VALIDATION numbers only.
+
+Run 2: other models and output file, e.g.
+    python -m scripts.orientation_check --runs smallcnn_c4_n2_A_vflip_weighted_s0 --out orientation_check_val_run2.csv
 """
+import argparse
+
 import numpy as np
 import pandas as pd
 import torch
@@ -20,6 +25,12 @@ from src.evaluate import evaluate
 from src.interpret import load_trained
 from src.splits import load_split
 from src.train import predict
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--runs", nargs="+", default=["smallcnn_c4_abl_none_none_s0", "smallcnn_c4_final_s0"],
+                    help="run_ids of the models to test (default: the two run-1 models)")
+parser.add_argument("--out", default="orientation_check_val.csv", help="file name in results/")
+args = parser.parse_args()
 
 X, y7, _ = load_dataset(7)
 y4 = np.asarray(config.MAP_7_TO_4)[y7]
@@ -46,7 +57,7 @@ transforms = {
     "flip_up_down": lambda x: x[:, :, ::-1, :],
 }
 rows = []
-for run_id in ("smallcnn_c4_abl_none_none_s0", "smallcnn_c4_final_s0"):
+for run_id in args.runs:
     model, mean, sd = load_trained(run_id, device=torch.device("cpu"))
     for name, transform in transforms.items():
         images = torch.from_numpy(np.ascontiguousarray(transform(X[val])))
@@ -59,5 +70,5 @@ for run_id in ("smallcnn_c4_abl_none_none_s0", "smallcnn_c4_final_s0"):
         print(row, flush=True)
 
 table = pd.DataFrame(rows)
-table.to_csv(config.RESULTS_DIR / "orientation_check_val.csv", index=False)
+table.to_csv(config.RESULTS_DIR / args.out, index=False)
 print(table.to_string(index=False))

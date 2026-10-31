@@ -1,7 +1,10 @@
 """Row-normalised validation confusion matrices: random forest vs the best CNN (highest mean val macro-F1
 over seeds on 4 classes), seed 0. Writes figures/confusion_val_4class and figures/confusion_val_7class.
 Matrices are recomputed from the saved predictions (results/preds/) through src.evaluate.
+`--tag n2_final --suffix _run2`: best CNN among the run-2 final runs; files get the suffix.
 """
+import argparse
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -16,18 +19,22 @@ CLASS_NAMES = {4: config.CLASSES_4, 7: config.CLASSES_7}
 SHORT = {"Prophase": "Pro", "Metaphase": "Meta", "Anaphase": "Ana", "Telophase": "Telo", "Mitosis": "M"}
 
 
-def best_cnn(log):
-    scores = {m: final_runs(log, m, 4)["macro_f1"].mean() for m in CNNS if len(final_runs(log, m, 4))}
+def best_cnn(log, tag="final"):
+    scores = {m: final_runs(log, m, 4, tag)["macro_f1"].mean() for m in CNNS if len(final_runs(log, m, 4, tag))}
     return max(scores, key=scores.get) if scores else None
 
 
-def plot(n_classes, models, seed=0):
+def run_id_of(model, n_classes, tag, seed=0):
+    return f"rf_c{n_classes}_final_s{seed}" if model == "random_forest" else f"{model}_c{n_classes}_{tag}_s{seed}"
+
+
+def plot(n_classes, models, tag="final", suffix="", seed=0):
     names = CLASS_NAMES[n_classes]
     fig, axes = plt.subplots(1, len(models), figsize=(TWO_COLUMNS * (0.5 if n_classes == 4 else 0.75),
                                                       (6.5 if n_classes == 4 else 7.2) * CM),
                              squeeze=False)
     for ax, model in zip(axes[0], models):
-        run_id = f"{'rf' if model == 'random_forest' else model}_c{n_classes}_final_s{seed}"
+        run_id = run_id_of(model, n_classes, tag, seed)
         p = np.load(config.PREDS_DIR / f"{run_id}.npz")
         m = evaluate(p["y_true"], p["y_pred"], names)
         cm, counts = m["confusion_matrix_norm"], m["confusion_matrix"].sum(axis=1)
@@ -46,14 +53,19 @@ def plot(n_classes, models, seed=0):
     axes[0][0].set_ylabel("True (validation)")
     fig.suptitle(f"Validation confusion matrices, {n_classes} classes, seed {seed} (% of each true class; rows sum to 100)", fontsize=7)
     fig.tight_layout()
-    save(fig, f"confusion_val_{n_classes}class")
+    save(fig, f"confusion_val_{n_classes}class{suffix}")
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--tag", default="final", help="run tag of the CNN final runs")
+    parser.add_argument("--suffix", default="", help="added to the figure file names")
+    args = parser.parse_args()
     set_style()
     log = read_log()
-    cnn = best_cnn(log)
+    cnn = best_cnn(log, args.tag)
     models = ["random_forest"] + ([cnn] if cnn else [])
     print(f"best CNN (4-class mean val macro-F1): {cnn}")
     for n_classes in (4, 7):
-        plot(n_classes, [m for m in models if (config.PREDS_DIR / f"{'rf' if m == 'random_forest' else m}_c{n_classes}_final_s0.npz").exists()])
+        plot(n_classes, [m for m in models if (config.PREDS_DIR / f"{run_id_of(m, n_classes, args.tag)}.npz").exists()],
+             args.tag, args.suffix)

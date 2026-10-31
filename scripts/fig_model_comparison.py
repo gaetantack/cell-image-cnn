@@ -1,7 +1,10 @@
 """Validation macro-F1 per model: mean ± SD over seeds 0, 1, 2 (bar + error bar), single seeds as dots,
 chance baselines as horizontal lines. One panel per task (4 and 7 classes).
 Writes figures/model_comparison_val.png/.pdf. VALIDATION numbers only.
+`--tag n2_final --suffix _run2`: CNN final runs of run 2 (RF and chance unchanged), figures/model_comparison_val_run2.
 """
+import argparse
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -11,13 +14,17 @@ from src.plotting import INK, MODEL_COLORS, MODEL_LABELS, MUTED, TWO_COLUMNS, CM
 
 MODELS = ("random_forest", "smallcnn", "resnet18_pretrained", "resnet18_scratch")
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--tag", default="final", help="run tag of the CNN final runs")
+parser.add_argument("--suffix", default="", help="added to the figure file name")
+args = parser.parse_args()
 log = read_log()
 set_style()
 fig, axes = plt.subplots(1, 2, figsize=(TWO_COLUMNS, 6 * CM), sharey=True)
 for ax, n_classes in zip(axes, (4, 7)):
-    models = [m for m in MODELS if len(final_runs(log, m, n_classes))]
+    models = [m for m in MODELS if len(final_runs(log, m, n_classes, args.tag))]
     for i, model in enumerate(models):
-        f1 = final_runs(log, model, n_classes)["macro_f1"].to_numpy()
+        f1 = final_runs(log, model, n_classes, args.tag)["macro_f1"].to_numpy()
         sd = f1.std(ddof=1) if len(f1) > 1 else 0
         ax.bar(i, f1.mean(), width=0.6, color=MODEL_COLORS[model], yerr=sd,
                error_kw={"elinewidth": 0.8, "ecolor": INK, "capsize": 2})
@@ -34,4 +41,4 @@ for ax, n_classes in zip(axes, (4, 7)):
 axes[0].set_ylabel("Macro-F1 (validation)")
 axes[0].legend(loc="upper left", frameon=False)
 fig.suptitle("Validation macro-F1, mean ± SD over 3 seeds (dots: single seeds)", fontsize=7, y=1.02)
-save(fig, "model_comparison_val")
+save(fig, f"model_comparison_val{args.suffix}")

@@ -8,6 +8,8 @@ The networks never saw the 7-phase labels, only 4 classes. Phases are coloured i
 (G1 -> S -> G2 -> pro -> meta -> ana -> telo) with an ordered colour map, mitotic cells drawn on top.
 Writes figures/umap_val.png/.pdf and results/umap_val.npz (coordinates).
 """
+import argparse
+
 import matplotlib.pyplot as plt
 import numpy as np
 import umap
@@ -24,6 +26,10 @@ from src.plotting import CM, MODEL_LABELS, TWO_COLUMNS, save, set_style
 from src.splits import load_split
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--tag", default="final", help="run tag of the CNN final runs (run 2: n2_final)")
+parser.add_argument("--suffix", default="", help="added to the output file names, e.g. _run2")
+args = parser.parse_args()
 log = read_log()
 train, val = load_split("train"), load_split("val")
 X_img, y7, _ = load_dataset(7)
@@ -34,11 +40,11 @@ F_all, _ = load_features(7)
 imputer = SimpleImputer(strategy="median").fit(F_all[train])  # medians from training cells only
 scaler = StandardScaler().fit(imputer.transform(F_all[train]))  # mean and SD from training cells only
 spaces["Hand-crafted features"] = scaler.transform(imputer.transform(F_all[val]))
-for model in ("smallcnn", best_resnet(log)):
-    if model is None or not (config.CHECKPOINT_DIR / f"{model}_c4_final_s0_best.pt").exists():
+for model in ("smallcnn", best_resnet(log, args.tag)):
+    if model is None or not (config.CHECKPOINT_DIR / f"{model}_c4_{args.tag}_s0_best.pt").exists():
         print(f"skip {model}: no final 4-class seed-0 checkpoint")
         continue
-    net, mean, sd = load_trained(f"{model}_c4_final_s0")
+    net, mean, sd = load_trained(f"{model}_c4_{args.tag}_s0")
     spaces[f"{MODEL_LABELS[model]} embedding"] = embeddings(net, X_img[val], mean, sd)
 
 set_style()
@@ -63,6 +69,6 @@ for ax, (name, Z) in zip(axes[0], spaces.items()):
 axes[0][-1].legend(loc="center left", bbox_to_anchor=(1.0, 0.5), frameon=False, markerscale=3)
 fig.suptitle("UMAP of validation cells, coloured by cell cycle phase (networks trained on 4 classes)",
              fontsize=7, y=1.1)
-save(fig, "umap_val")
-np.savez(config.RESULTS_DIR / "umap_val.npz", rows=val, y7=y_val,
+save(fig, f"umap_val{args.suffix}")
+np.savez(config.RESULTS_DIR / f"umap_val{args.suffix}.npz", rows=val, y7=y_val,
          **{name.split(" ")[0].lower() + f"_{i}": xy for i, (name, xy) in enumerate(coords.items())})

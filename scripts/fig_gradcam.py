@@ -12,6 +12,7 @@ Also figures/gradcam_cell30439_train.png: training cell 30439 (corner artefact, 
 
 Default: the best CNN. `--model smallcnn` makes the same outputs for another CNN, with "_smallcnn" added to
 every file name; `--device cpu` runs on the CPU (e.g. while the GPU is busy with training).
+`--tag n2_final --suffix _run2`: run-2 final runs (best CNN among them by default); files get the suffix too.
 """
 import argparse
 
@@ -35,10 +36,12 @@ ARTEFACT_CELL = 30439
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", default=None, help="CNN to explain (default: best CNN)")
 parser.add_argument("--device", default=None, help="cpu or mps (default: best available)")
+parser.add_argument("--tag", default="final", help="run tag of the CNN final runs (run 2: n2_final)")
+parser.add_argument("--suffix", default="", help="added to the output file names, e.g. _run2")
 args = parser.parse_args()
-model_name = args.model or best_cnn(read_log())
-suffix = f"_{args.model}" if args.model else ""
-run_id = f"{model_name}_c4_final_s0"
+model_name = args.model or best_cnn(read_log(), args.tag)
+suffix = (f"_{args.model}" if args.model else "") + args.suffix
+run_id = f"{model_name}_c4_{args.tag}_s0"
 model, mean, sd = load_trained(run_id, device=torch.device(args.device) if args.device else None)
 X, y7, cell_ids = load_dataset(7)
 y4 = np.asarray(config.MAP_7_TO_4)[y7]

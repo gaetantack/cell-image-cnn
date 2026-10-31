@@ -9,6 +9,8 @@ For each feature space (hand-crafted features, SmallCNN embedding, best ResNet18
 PC1 is the simplest possible "trajectory"; a real pseudotime method (e.g. diffusion pseudotime) could do
 better. Writes results/pseudotime_val.csv and figures/pseudotime_val.png/.pdf. VALIDATION numbers only.
 """
+import argparse
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -26,6 +28,10 @@ from src.interpret import embeddings, load_trained
 from src.plotting import CM, MODEL_LABELS, TWO_COLUMNS, save, set_style
 from src.splits import load_split
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--tag", default="final", help="run tag of the CNN final runs (run 2: n2_final)")
+parser.add_argument("--suffix", default="", help="added to the output file names, e.g. _run2")
+args = parser.parse_args()
 log = read_log()
 train, val = load_split("train"), load_split("val")
 X_img, y7, _ = load_dataset(7)
@@ -34,10 +40,10 @@ spaces = {}
 F, _ = load_features(7)
 F = SimpleImputer(strategy="median").fit(F[train]).transform(F)  # medians from training cells only
 spaces["Hand-crafted features"] = F
-for model in ("smallcnn", best_resnet(log)):
-    if model is None or not (config.CHECKPOINT_DIR / f"{model}_c4_final_s0_best.pt").exists():
+for model in ("smallcnn", best_resnet(log, args.tag)):
+    if model is None or not (config.CHECKPOINT_DIR / f"{model}_c4_{args.tag}_s0_best.pt").exists():
         continue
-    net, mean, sd = load_trained(f"{model}_c4_final_s0")
+    net, mean, sd = load_trained(f"{model}_c4_{args.tag}_s0")
     rows = np.concatenate([train, val])
     Z = np.zeros((len(X_img), net.embed(mean.new_zeros(1, 2, 66, 66)).shape[1]), np.float32)
     Z[rows] = embeddings(net, X_img[rows], mean, sd)
@@ -56,7 +62,7 @@ for name, Z in spaces.items():
     results.append({"space": name, "spearman_7_phases": round(rho, 3), "spearman_4_classes": round(rho_4, 3),
                     "pc1_variance_explained": round(pca.explained_variance_ratio_[0], 3)})
 table = pd.DataFrame(results)
-table.to_csv(config.RESULTS_DIR / "pseudotime_val.csv", index=False)
+table.to_csv(config.RESULTS_DIR / f"pseudotime_val{args.suffix}.csv", index=False)
 print(table.to_string(index=False))
 
 set_style()
@@ -75,4 +81,4 @@ for ax, (name, t) in zip(axes[0], pseudo.items()):
 axes[0][0].set_ylabel("PC1 pseudotime (validation cells)")
 fig.suptitle("Pseudotime = first principal component; violins per phase, dots = median (validation)",
              fontsize=7, y=1.12)
-save(fig, "pseudotime_val")
+save(fig, f"pseudotime_val{args.suffix}")

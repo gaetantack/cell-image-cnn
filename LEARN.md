@@ -28,6 +28,20 @@ The darkfield (Ch6) image is side-scattered light. In an imaging flow cytometer 
 Summarises the 18 SmallCNN runs (augment none/vflip/basic × balance weighted/oversample × seeds 0–2) and picks AUG*/BAL* by a rule fixed before the runs: highest mean val macro-F1; if the best two are within one seed SD, higher mitosis recall; if that is also within one SD, vflip > none > basic, then weighted > oversample. Writes `results/run2_phaseA_val.md` and `results/run2_aug_bal_choice.json`; the queue reads the JSON.
 - **Why a fixed rule:** deciding the rule after seeing the numbers would let us pick what we like (a form of p-hacking).
 
+### Examiner questions, run 2 (practice for the closed-book oral)
+<details>
+<summary>3 new questions with model answers</summary>
+
+**1. You chose up-down flips over no augmentation although the means differ by only 0.006. Isn't that arbitrary?**
+The choice followed a rule written down before the runs: highest mean val macro-F1, and if the best two were within one seed SD, mitosis recall, then a fixed preference. The best two (vflip + weighted 0.743 ± 0.013 and vflip + oversampling 0.741 ± 0.010) were a tie, so the preference decided. The honest statement is that the setting matters less than run 1 suggested: all six settings lie within 0.03, and seeds move a result by 0.01–0.05. What vflip + weighted does have is the most stable mitosis recall (0.66 ± 0.01).
+
+**2. If the darkfield direction comes from the instrument, isn't the CNN learning an artefact?**
+An artefact would be something that differs between classes for reasons unrelated to biology, like a background level that depends on the acquisition day. The light direction is the same for every cell, in every split, so it cannot tell the classes apart by itself. What the network learns is how a cell scatters light that comes from one side. That depends on its granularity and chromatin, which change through the cycle. The orientation check shows that the network relies on the direction (left-right flipped images lose ≈ 0.14 macro-F1) but not on up/down (−0.014). The price is that the model is tied to this instrument geometry.
+
+**3. Your best epoch is often the last one. Does that mean you should train longer?**
+Not necessarily. The cosine schedule lowers the learning rate to almost zero at the maximum epoch, so the last epochs are the calmest and usually the best, whatever the maximum is. To know whether longer training helps, one would compare runs with different maximum epochs (e.g. 25 vs 40), not look at where the best epoch falls in one run. Early stopping, on the other hand, sometimes stopped runs long before the end (e.g. best epoch 5 of 25) because validation macro-F1 is noisy, which is one reason for the seed spread.
+</details>
+
 ## Added overnight 2026-10-25/26 (by Claude, check every point)
 
 ### `scripts/run_rf.py` — random forest baseline (RQ1)

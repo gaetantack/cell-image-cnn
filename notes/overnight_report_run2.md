@@ -130,3 +130,4 @@ Note: the queue's 06:30 guard counts minutes from noon, so in the daytime (befor
 4. Learning curve finished with 3 seeds for all families (`scripts/queue_run2_lc_finish.sh`, started 09:52, 21 runs); 7-class ResNet18 runs dropped.
 5. Patience 6 kept; stated as a limitation.
 Drafts (`results_val_draft.md` Limitations section and pilot note, `methods.md`) and PROJECT.md decisions log updated.
+The learning-curve queue was stopped at about 10:00 on 1 Nov by the user and will be run overnight instead.

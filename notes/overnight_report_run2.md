@@ -12,7 +12,7 @@ Branch `overnight-run-2` (from `overnight-2026-10-25`; pushed, not merged). Ever
 | C Finals, 3 seeds × 3 families, max 25 epochs, patience 6 | done |
 | D Tables + figures `_run2` (summary, run 1 vs run 2, model comparison, confusion, UMAP, pseudotime, Grad-CAM best CNN + SmallCNN), border swap test repeated | done |
 | E1 7-class finals | SmallCNN only (3 seeds); ResNets skipped (would not end by 06:30) |
-| E2 Learning curve 1/5/20 %, seed 0 | SmallCNN and ResNet18-pretrained done (pretrained started by hand, see decision 3); scratch not run (time) |
+| E2 Learning curve 1/5/20 %, seed 0 | SmallCNN and ResNet18-pretrained done (pretrained started by hand, see decision 3a); scratch not run (time) |
 | Writing: methods.md, results_val_draft.md, LEARN.md (+3 examiner questions), PROJECT.md decisions | done |
 
 ## Phase A: augmentation × balancing (SmallCNN, val, mean ± SD over 3 seeds)
@@ -54,7 +54,7 @@ Full tables: `results/table_val_summary_run2.md`, `results/table_run1_vs_run2_va
 | `pseudotime_val_run2` | `pseudotime.py --tag n2_final --suffix _run2` |
 | `gradcam_val_run2`, `gradcam_cell30439_train_run2` | `fig_gradcam.py --tag n2_final --suffix _run2` |
 | `gradcam_val_smallcnn_run2`, `gradcam_cell30439_train_smallcnn_run2` | `fig_gradcam.py --model smallcnn --tag n2_final --suffix _run2` |
-| `learning_curve_val_run2` | `fig_learning_curve.py --prefix n2_ --suffix _run2` (SmallCNN only + 100 % points) |
+| `learning_curve_val_run2` | `fig_learning_curve.py --prefix n2_ --suffix _run2` (SmallCNN and pretrained ResNet18, seed 0; scratch only at 100 %) |
 
 The run-1 `model_comparison_val` was regenerated with the legend moved (same numbers).
 

@@ -39,6 +39,6 @@ for ax, n_classes in zip(axes, (4, 7)):
     ax.set_ylim(0, 1)
     ax.set_title(f"{n_classes} classes")
 axes[0].set_ylabel("Macro-F1 (validation)")
-axes[0].legend(loc="upper left", frameon=False)
+axes[1].legend(loc="upper right", frameon=False)
 fig.suptitle("Validation macro-F1, mean ± SD over 3 seeds (dots: single seeds)", fontsize=7, y=1.02)
 save(fig, f"model_comparison_val{args.suffix}")

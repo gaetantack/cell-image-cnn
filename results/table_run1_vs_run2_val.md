@@ -11,6 +11,7 @@ Made by `scripts/compare_runs.py`. Best epoch is 0-based; "epochs run" = max epo
 | ResNet18 (ImageNet) | run 2 | 3 | lr 0.001, wd 0.0001, bs 64, aug vflip, bal weighted, max 25 ep | 0.781 ± 0.007 | 0.75 ± 0.03 | 19 / 6 / 11 | 25 / 13 / 18 | 1386 |
 | | change | | | +0.021 | | | | |
 | ResNet18 (scratch) | run 1 | 3 | lr 0.002, wd 0.0001, bs 64, aug basic, bal weighted, max 12 ep | 0.696 ± 0.012 | 0.64 ± 0.11 | 10 / 11 / 6 | 12 / 12 / 12 | 900 |
-| ResNet18 (scratch) | run 2 | 0 | not run | | | | | |
+| ResNet18 (scratch) | run 2 | 3 | lr 0.001, wd 0.0001, bs 64, aug vflip, bal weighted, max 25 ep | 0.745 ± 0.003 | 0.60 ± 0.02 | 20 / 20 / 18 | 25 / 25 / 25 | 1901 |
+| | change | | | +0.050 | | | | |
 
 Random forest (unchanged, run 1): 0.632 ± 0.001 val macro-F1.

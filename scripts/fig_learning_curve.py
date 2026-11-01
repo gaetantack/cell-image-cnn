@@ -3,7 +3,9 @@
 Fractions 1%, 5%, 20% are the runs tagged lf<fraction>; 100% is the final run. Each point is the mean over
 the seeds available (n shown in results/learning_curve_val.csv), error bars = SD when n > 1.
 Writes figures/learning_curve_val.png/.pdf. VALIDATION numbers only.
+`--prefix n2_ --suffix _run2`: run-2 runs (n2_lf<fraction>, n2_final), written with the suffix.
 """
+import argparse
 import json
 
 import matplotlib.pyplot as plt
@@ -15,11 +17,15 @@ from src.plotting import INK, MODEL_COLORS, MODEL_LABELS, ONE_COLUMN, CM, save, 
 
 MODELS = ("smallcnn", "resnet18_pretrained", "resnet18_scratch")
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--prefix", default="", help="run-tag prefix (run 2: n2_)")
+parser.add_argument("--suffix", default="", help="added to the output file names, e.g. _run2")
+args = parser.parse_args()
 log = read_log()
 rows = []
 for model in MODELS:
     for frac in config.LABEL_FRACTIONS:
-        tag = "final" if frac == 1.0 else f"lf{frac}"
+        tag = args.prefix + ("final" if frac == 1.0 else f"lf{frac}")
         ids = [f"{model}_c4_{tag}_s{s}" for s in config.SEEDS]
         runs = log[log["run_id"].isin(ids)]
         if len(runs):
@@ -28,7 +34,7 @@ for model in MODELS:
                          "macro_f1_mean": runs["macro_f1"].mean(),
                          "macro_f1_sd": runs["macro_f1"].std(ddof=1) if len(runs) > 1 else float("nan")})
 table = pd.DataFrame(rows)
-table.to_csv(config.RESULTS_DIR / "learning_curve_val.csv", index=False)
+table.to_csv(config.RESULTS_DIR / f"learning_curve_val{args.suffix}.csv", index=False)
 print(table.to_string(index=False))
 
 
@@ -57,5 +63,5 @@ ax.set_xlabel("Labelled training cells used")
 ax.set_ylabel("Macro-F1 (validation)")
 ax.set_ylim(0, 1)
 ax.legend(frameon=False, loc="lower right")
-ax.set_title("Learning curve, 4 classes (validation)", color=INK)
-save(fig, "learning_curve_val")
+ax.set_title(f"Learning curve, 4 classes (validation){' — run 2' if args.prefix else ''}", color=INK)
+save(fig, f"learning_curve_val{args.suffix}")

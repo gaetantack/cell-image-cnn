@@ -14,7 +14,7 @@ The forest relied mostly on cell size. Shuffling `area` lowered the validation m
 
 *Take-home (Fig. model_comparison_val_run2):* on validation, all three CNNs beat the hand-crafted features by 0.11–0.15 macro-F1, mainly because they find two to three times more mitotic cells.
 
-[7-class results: PENDING, Phase E; see `results/table_val_summary_run2.md` if the SmallCNN 7-class runs finished.]
+On the 7-class task (secondary result; 4-class hyperparameters reused), the forest reached 0.559 ± 0.004 and SmallCNN 0.593 ± 0.034. The ResNet18 7-class models were not trained with the run-2 settings (time). Recall on single mitotic phases rests on very few validation cells (10 metaphase, 2 anaphase, 4 telophase), so it changes in steps of 0.1, 0.5 or 0.25 and should not be interpreted per phase. Prophase (91 cells) was recognised better by SmallCNN (recall 0.57 ± 0.13) than by the forest (0.27). Two of the three SmallCNN 7-class runs stopped early (best epochs 4 and 3 of 25), which explains part of the seed spread.
 
 ## RQ2 — ImageNet transfer vs training from scratch
 

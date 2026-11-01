@@ -41,6 +41,8 @@ print(table.to_string(index=False))
 
 def seed_text(t):
     """Legend note on how many seeds each point has."""
+    if len(t) == 1:
+        return f"100% only, {t['n_seeds'].iloc[0]} seeds"
     if t["n_seeds"].nunique() == 1:
         return f"{t['n_seeds'].iloc[0]} seeds"
     return "seed 0; 100%: 3 seeds"

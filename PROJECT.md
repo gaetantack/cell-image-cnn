@@ -78,6 +78,7 @@ Predict the cell cycle phase of single Jurkat cells from label-free brightfield 
 | 2026-11-01 | AUG*/BAL* = vflip + weighted loss for all CNN families, chosen from 3 augmentations × 2 balancings × 3 seeds (SmallCNN) by a rule fixed beforehand (highest mean val macro-F1; tie within 1 SD → mitosis recall; tie → vflip > none > basic, weighted > oversample; "1 SD" = the larger of the two settings' SDs) (made overnight by Claude, to confirm) | Best two settings tied (0.743 vs 0.741); vflip + weighted most stable mitosis recall |
 | 2026-11-01 | Run-2 CNN grid lr {5e-4, 1e-3, 2e-3, 3.5e-3, 5e-3, 1e-2} × wd {1e-4, 1e-2}, batch size fixed 64, 4-epoch tuning, same for all families (made overnight by Claude, to confirm) | Run 1 picked the grid edge (2e-3) everywhere; 64 beat 128 in every run-1 pair. All families now pick lr 1e-3, wd 1e-4 (inside the grid) |
 | 2026-11-01 | Phase E items started only if all runs of the item (3 seeds or 3 label fractions of one family) end before 06:30 (`scripts/queue_run2_CE.sh`) (made overnight by Claude, to confirm) | A family with < 3 seeds is never reported as a result |
+| 2026-11-01 | ResNet18-pretrained learning curve (run 2, seed 0) started by hand outside the worst-case time guard; each run started only when it could end by 06:30 (made overnight by Claude, to confirm) | GPU otherwise idle; RQ2 is Tier 1 |
 | 2026-11-01 | Random forest and chance baselines not re-run in run 2; run-2 tables use their run-1 rows (made overnight by Claude, to confirm) | Their settings did not change |
 
 ## 9. Observations

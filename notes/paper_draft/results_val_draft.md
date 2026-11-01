@@ -20,7 +20,12 @@ On the 7-class task (secondary result; 4-class hyperparameters reused), the fore
 
 With the same tuning grid, augmentation, balancing and training length (up to 25 epochs with early stopping), the pretrained ResNet18 reached 0.781 ± 0.007 and the same architecture trained from scratch 0.745 ± 0.003, a difference of 0.036, about five times the larger SD. The difference is larger for mitosis: recall 0.75 ± 0.03 vs 0.60 ± 0.02. The scratch network matched SmallCNN (0.744 ± 0.010) despite 29 times more parameters. All three scratch runs used the full 25 epochs, but their best epochs were 18–20, so they were not still improving at the end. Two of the three pretrained runs stopped early (best epochs 6 and 11). In tuning (4 epochs), all three families selected the same learning rate (1e-3) and weight decay (1e-4), inside the grid.
 
-[Learning curve: not yet re-run with the run-2 settings (Phase E if time); see the note at the end.]
+*Learning curve (seed 0 only; Fig. learning_curve_val_run2; `results/learning_curve_val_run2.csv`).* Each subset run had as many gradient steps per epoch as a full run, up to 25 epochs with early stopping. Validation macro-F1 at 1 / 5 / 20 / 100% of the labelled training cells (100% = mean of the 3 final runs):
+- SmallCNN: 0.503 / 0.598 / 0.664 / 0.744
+- pretrained ResNet18: 0.540 / 0.639 / LC20 / 0.781
+- scratch ResNet18: only 100% (0.745); subsets not run.
+
+At every fraction the pretrained network was ahead of SmallCNN, by 0.04 at 1–5%. With 5% of the labels (1,129 cells) the pretrained ResNet18 reached the level of the random forest trained on all labels (0.632). These are single-seed points, and several small-subset runs stopped very early (SmallCNN 5%: best epoch 2), so differences of a few hundredths are within noise.
 
 *Take-home:* on validation, ImageNet pretraining gives a modest but clear gain in macro-F1 and a larger gain in mitosis recall, with the same training budget.
 

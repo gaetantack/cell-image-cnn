@@ -12,7 +12,7 @@ Branch `overnight-run-2` (from `overnight-2026-10-25`; pushed, not merged). Ever
 | C Finals, 3 seeds × 3 families, max 25 epochs, patience 6 | done |
 | D Tables + figures `_run2` (summary, run 1 vs run 2, model comparison, confusion, UMAP, pseudotime, Grad-CAM best CNN + SmallCNN), border swap test repeated | done |
 | E1 7-class finals | SmallCNN only (3 seeds); ResNets skipped (would not end by 06:30) |
-| E2 Learning curve 1/5/20 % | SmallCNN only, seed 0 (LC_RESULT); ResNets skipped (time) |
+| E2 Learning curve 1/5/20 %, seed 0 | SmallCNN and ResNet18-pretrained done (pretrained started by hand, see decision 3); scratch not run (time) |
 | Writing: methods.md, results_val_draft.md, LEARN.md (+3 examiner questions), PROJECT.md decisions | done |
 
 ## Phase A: augmentation × balancing (SmallCNN, val, mean ± SD over 3 seeds)
@@ -39,6 +39,8 @@ Branch `overnight-run-2` (from `overnight-2026-10-25`; pushed, not merged). Ever
 | ResNet18 (scratch) | 0.696 ± 0.012 | 0.745 ± 0.003 | +0.050 | 0.60 ± 0.02 (0.64) | 20/20/18 (25/25/25) |
 | 7 classes: SmallCNN | 0.560 ± 0.007 | 0.593 ± 0.034 | +0.033 | | 11/3/4 |
 
+Learning curve, run 2, seed 0, val macro-F1 at 1 / 5 / 20 / 100 %: SmallCNN 0.503 / 0.598 / 0.664 / 0.744; ResNet18-pretrained 0.540 / 0.639 / LC20 / 0.781 (`figures/learning_curve_val_run2`). These are lower than run 1 at small fractions (e.g. SmallCNN 1 %: 0.538 in run 1), probably because small-subset runs stopped very early (best epoch 2 at 5 %). Single seed.
+
 Full tables: `results/table_val_summary_run2.md`, `results/table_run1_vs_run2_val.md`. Run-2 configs: all three families lr 1e-3, wd 1e-4, batch 64, vflip, weighted. The ranking is unchanged (pretrained > scratch ≈ SmallCNN > RF). The pretrained − scratch gap shrank from 0.065 to 0.036. Scratch never stopped early, but its best epochs were 18–20, so 25 epochs is no longer a hard cap. Several settings changed at once (augmentation, lr, epochs, patience), so the gains cannot be assigned to one cause.
 
 ## Figures made tonight (all by scripts; run-1 files kept)
@@ -47,7 +49,7 @@ Full tables: `results/table_val_summary_run2.md`, `results/table_run1_vs_run2_va
 |---|---|
 | `phaseA_val_run2` | `scripts/fig_phaseA_run2.py` |
 | `model_comparison_val_run2` | `fig_model_comparison.py --tag n2_final --suffix _run2` |
-| `confusion_val_4class_run2`, `confusion_val_7class_run2` | `fig_confusion.py --tag n2_final --suffix _run2` |
+| `confusion_val_4class_run2`, `confusion_val_7class_run2` | `fig_confusion.py --tag n2_final --suffix _run2` (7-class panel shows only the RF: the best CNN, pretrained ResNet18, has no run-2 7-class runs) |
 | `umap_val_run2` | `fig_umap.py --tag n2_final --suffix _run2` |
 | `pseudotime_val_run2` | `pseudotime.py --tag n2_final --suffix _run2` |
 | `gradcam_val_run2`, `gradcam_cell30439_train_run2` | `fig_gradcam.py --tag n2_final --suffix _run2` |
@@ -72,6 +74,7 @@ The run-1 `model_comparison_val` was regenerated with the legend moved (same num
 |---|---|---|---|
 | 1 | "Within one seed SD" in the Phase A rule = the larger of the two settings' SDs; tie-break order vflip > none > basic (basic was not ranked in the prompt) | If either setting's noise covers the gap, the gap means nothing; basic removes the darkfield direction | `scripts/choose_aug_bal.py` (`choose`, `AUG_PREFERENCE`); re-run it |
 | 2 | Kept the run-1 config values (`TUNE_EPOCHS`, `FINAL_EPOCHS`, `CNN_GRID`) and added a separate run-2 block (`RUN2_*`, `CNN_GRID_RUN2`) in `src/config.py` | Run 1 stays reproducible; one place for config | Delete the run-2 block |
+| 3a | ResNet18-pretrained learning curve started by hand at 05:12 (`scripts/queue_run2_lc_pretrained.sh`), although the worst-case guard (3 × 33 min) said it would not fit: realistic ≈ 60 min, GPU otherwise idle, RQ2 is Tier 1. I stopped the script before the 20 % run when 1 % took 26 min, then started 20 % at 05:53 when the worst case (31 min) fitted again | Use the idle GPU for a Tier-1 item without risking the 06:30 end | Delete the `resnet18_pretrained_c4_n2_lf*` rows |
 | 3 | Phase E started per item (all 3 seeds or fractions of one family must end before 06:30) instead of per run: new `scripts/queue_run2_CE.sh`; stopped the bash process of `queue_run2_BC.sh` at 02:40 (its running training continued) | A family with < 3 seeds can't be reported; the SmallCNN learning curve was more useful than one lone ResNet 7-class seed | Run `queue_run2_BC.sh` instead (it continues where CE stopped) |
 | 4 | RF and chance baselines not re-run; run-2 tables use their run-1 rows | Their settings did not change | — |
 | 5 | Orientation check run on the seed-0 Phase A models of all three augmentations (with BAL*), not only the chosen one | Gives the comparison none / vflip / basic in one table | — |
@@ -84,7 +87,7 @@ The run-1 `model_comparison_val` was regenerated with the legend moved (same num
 1. **Confirm AUG*/BAL* = vflip + weighted** (and the run-2 settings: 25 epochs, patience 6, new grid) as the settings for the paper and the week-5 test. Alternatively, report Phase A as "the choice hardly matters" and keep the simpler "none".
 2. **Using the darkfield direction:** the models now rely on the instrument's left/right geometry. That is OK for this dataset, but it should be stated as a limitation (transfer to other instruments). Do you agree, or do you prefer direction-invariant models (basic; ≈ 0.02 lower, less stable)?
 3. **Which run goes in the paper:** run 2 everywhere (my suggestion; the run-1 numbers only as a note), or both?
-4. **Missing pieces before the test:** ResNet 7-class finals (≈ 3 × 33 min per family) and the ResNet learning curves with the run-2 settings (≈ 3 × 33 min per family, seed 0) were not run. Run them, or drop the 7-class ResNets (val 7-class macro-F1 is unreliable anyway: 2 anaphase and 4 telophase cells)?
+4. **Missing pieces before the test:** the ResNet 7-class finals (≈ 3 × 33 min per family), the scratch-ResNet learning curve and learning-curve seeds 1–2 (run-2 settings) were not run. Run them, or drop the 7-class ResNets (val 7-class macro-F1 is unreliable anyway: 2 anaphase and 4 telophase cells)?
 5. **Early stopping noise:** keep patience 6, or select the epoch on a smoothed val curve / use a fixed epoch count? (It affects a few runs, e.g. best epoch 3–5.)
 
 ## Resume / reproduce commands

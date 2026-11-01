@@ -122,3 +122,11 @@ Note: the queue's 06:30 guard counts minutes from noon, so in the daytime (befor
 - Claude wrote the new code (`augment_vflip` + test, `scripts/choose_aug_bal.py` + tests, `scripts/fig_phaseA_run2.py`, `scripts/compare_runs.py`, queue scripts, `--tag/--suffix` options), ran all experiments, and wrote the drafts, LEARN.md entries and this report.
 - All numbers come from `results/experiments.csv` and the scripts. No literature was looked up; [CHECK]/[CITE] placeholders remain (e.g. the ImageStream side-scatter geometry).
 - Every interpretation in the drafts needs to be checked by the user before it goes into the paper.
+
+## Morning follow-up (2026-11-01, user decisions)
+1. vflip + weighted confirmed; the paper states that all six augmentation × balancing settings were within 0.03.
+2. Left/right darkfield direction kept; stated as a limitation (instrument geometry, may not transfer to another cytometer).
+3. Run 2 is the paper result; run 1 is presented as the pilot that found the orientation problem.
+4. Learning curve finished with 3 seeds for all families (`scripts/queue_run2_lc_finish.sh`, started 09:52, 21 runs); 7-class ResNet18 runs dropped.
+5. Patience 6 kept; stated as a limitation.
+Drafts (`results_val_draft.md` Limitations section and pilot note, `methods.md`) and PROJECT.md decisions log updated.

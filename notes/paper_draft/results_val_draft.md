@@ -1,6 +1,6 @@
 # Results (DRAFT, run 2)
 
-> **Validation results — not the final test numbers.** Every number below is a validation-set number from `results/experiments.csv` (tables: `results/table_val_summary_run2.md`, `results/run2_phaseA_val.md`, `results/table_run1_vs_run2_val.md`). The test set has not been touched. Claude rewrote this overnight on 2026-10-31/11-01 with the run-2 CNN settings (vflip augmentation, weighted loss, widened learning-rate grid, up to 25 epochs with early stopping); check every sentence. Run-1 numbers are only in the note at the end.
+> **Validation results — not the final test numbers.** Every number below is a validation-set number from `results/experiments.csv` (tables: `results/table_val_summary_run2.md`, `results/run2_phaseA_val.md`, `results/table_run1_vs_run2_val.md`). The test set has not been touched. Claude rewrote this overnight on 2026-10-31/11-01 with the run-2 CNN settings (vflip augmentation, weighted loss, widened learning-rate grid, up to 25 epochs with early stopping); check every sentence. Run-1 (pilot) numbers are only in the note at the end. Decisions confirmed by the user on 2026-11-01: run 2 is the paper result, run 1 the pilot; see PROJECT.md decisions log.
 
 All models were selected and early-stopped on the validation set, so these numbers are optimistic estimates. Mean ± SD over seeds 0, 1 and 2 unless stated otherwise. The validation set has 4,840 cells: 2,150 G1, 1,293 S, 1,290 G2 and 107 mitotic (91 prophase, 10 metaphase, 2 anaphase, 4 telophase).
 
@@ -14,16 +14,16 @@ The forest relied mostly on cell size. Shuffling `area` lowered the validation m
 
 *Take-home (Fig. model_comparison_val_run2):* on validation, all three CNNs beat the hand-crafted features by 0.11–0.15 macro-F1, mainly because they find two to three times more mitotic cells.
 
-On the 7-class task (secondary result; 4-class hyperparameters reused), the forest reached 0.559 ± 0.004 and SmallCNN 0.593 ± 0.034. The ResNet18 7-class models were not trained with the run-2 settings (time). Recall on single mitotic phases rests on very few validation cells (10 metaphase, 2 anaphase, 4 telophase), so it changes in steps of 0.1, 0.5 or 0.25 and should not be interpreted per phase. Prophase (91 cells) was recognised better by SmallCNN (recall 0.57 ± 0.13) than by the forest (0.27). Two of the three SmallCNN 7-class runs stopped early (best epochs 4 and 3 of 25), which explains part of the seed spread.
+On the 7-class task (secondary result; 4-class hyperparameters reused), the forest reached 0.559 ± 0.004 and SmallCNN 0.593 ± 0.034. The 7-class task is reported for the forest and SmallCNN only; the ResNet18 7-class runs were dropped, because the 7-class score depends on 6 validation cells (2 anaphase, 4 telophase) and the compute went to the learning curve. Recall on single mitotic phases rests on very few validation cells (10 metaphase, 2 anaphase, 4 telophase), so it changes in steps of 0.1, 0.5 or 0.25 and should not be interpreted per phase. Prophase (91 cells) was recognised better by SmallCNN (recall 0.57 ± 0.13) than by the forest (0.27). Two of the three SmallCNN 7-class runs stopped early (best epochs 4 and 3 of 25), which explains part of the seed spread.
 
 ## RQ2 — ImageNet transfer vs training from scratch
 
 With the same tuning grid, augmentation, balancing and training length (up to 25 epochs with early stopping), the pretrained ResNet18 reached 0.781 ± 0.007 and the same architecture trained from scratch 0.745 ± 0.003, a difference of 0.036, about five times the larger SD. The difference is larger for mitosis: recall 0.75 ± 0.03 vs 0.60 ± 0.02. The scratch network matched SmallCNN (0.744 ± 0.010) despite 29 times more parameters. All three scratch runs used the full 25 epochs, but their best epochs were 18–20, so they were not still improving at the end. Two of the three pretrained runs stopped early (best epochs 6 and 11). In tuning (4 epochs), all three families selected the same learning rate (1e-3) and weight decay (1e-4), inside the grid.
 
-*Learning curve (seed 0 only; Fig. learning_curve_val_run2; `results/learning_curve_val_run2.csv`).* Each subset run had as many gradient steps per epoch as a full run, up to 25 epochs with early stopping. Validation macro-F1 at 1 / 5 / 20 / 100% of the labelled training cells (100% = mean of the 3 final runs):
+*Learning curve (currently seed 0 only; seeds 1–2 and the scratch ResNet18 subsets are running, `scripts/queue_run2_lc_finish.sh` — update numbers when done; Fig. learning_curve_val_run2; `results/learning_curve_val_run2.csv`).* Each subset run had as many gradient steps per epoch as a full run, up to 25 epochs with early stopping. Validation macro-F1 at 1 / 5 / 20 / 100% of the labelled training cells (100% = mean of the 3 final runs):
 - SmallCNN: 0.503 / 0.598 / 0.664 / 0.744
 - pretrained ResNet18: 0.540 / 0.639 / 0.721 / 0.781
-- scratch ResNet18: only 100% (0.745); subsets not run.
+- scratch ResNet18: only 100% (0.745); subsets running.
 
 At every fraction the pretrained network was ahead of SmallCNN: by 0.04 at 1–5% and by 0.06 at 20% (0.721 vs 0.664). With 5% of the labels (1,129 cells) the pretrained ResNet18 reached the level of the random forest trained on all labels (0.632). These are single-seed points, and several small-subset runs stopped very early (SmallCNN 5%: best epoch 2), so differences of a few hundredths are within noise.
 
@@ -92,7 +92,18 @@ For the forest, adding the raw darkfield intensity levels, which track the backg
 
 ---
 
-## Note: run 1 → run 2
+## Limitations (to move to the Discussion)
+
+- *Instrument geometry.* The models use the fixed left/right direction of the darkfield images (left-right flips cost the chosen SmallCNN 0.14 macro-F1 and most of its mitosis recall). This direction comes from the instrument and is the same for every cell, so it is not leakage, but the models may not transfer to another cytometer or another mounting of the optics. A direction-free model (rotations and both flips) scored about 0.02 lower and varied more between seeds.
+- *Augmentation hardly matters.* All six augmentation × balancing settings were within 0.03 of each other; the chosen setting won a tie, not a clear contest.
+- *Early stopping on a noisy curve.* Models were early-stopped on validation macro-F1 with patience 6. The curve is noisy, especially for mitosis (107 validation cells), and some runs kept a very early epoch (best epochs 2–5), most often in the small learning-curve subsets. A smoothed or fixed-epoch selection was not tried, because it would require re-running all models.
+- *Validation used for selection.* All numbers in this draft are on the validation set that was also used for model selection and early stopping, so they are optimistic; the test set gives the final numbers.
+- *Seven classes.* The 7-class score depends on 6 anaphase/telophase validation cells, and was only run for the forest and SmallCNN.
+
+## Note: pilot run (run 1) → run 2
+
+Run 1 was a pilot. Its main finding was the orientation problem: a SmallCNN without augmentation beat the one with rotations and flips (0.742 vs 0.690, seed 0) and lost much of its score on left-right-flipped images, which led to the darkfield-direction analysis and the vflip augmentation used in run 2.
+
 
 Run 1 (2026-10-25/26) used rotation/flip augmentation ("basic"), weighted loss, a learning-rate grid {1e-4, 5e-4, 2e-3} × weight decay × batch size {64, 128}, and at most 12 epochs (patience 5). Run 2 changed augmentation to vflip, widened the learning-rate grid, fixed batch size 64, and allowed up to 25 epochs (patience 6). Validation macro-F1, 4 classes, mean ± SD over 3 seeds (`results/table_run1_vs_run2_val.md`):
 

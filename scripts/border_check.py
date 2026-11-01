@@ -15,8 +15,11 @@ difference is whether that background comes from the right class. So "same class
 the seam, and the drop from "same class" to "other class" is what the background itself contributes.
 If recall of a class drops a lot when only the ring changes, the network uses the background for it.
 Seed-0 four-class final run of every CNN, run on the CPU (the GPU is used by the training queue).
+`--tag n2_final --suffix _run2`: the run-2 final runs, written to results/border_check_val_run2.csv.
 Writes results/border_check_val.csv. VALIDATION numbers only.
 """
+import argparse
+
 import numpy as np
 import pandas as pd
 import torch
@@ -28,6 +31,11 @@ from src.interpret import load_trained
 from src.models import MODEL_NAMES
 from src.splits import load_split
 from src.train import predict
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--tag", default="final", help="run tag of the CNN final runs (run 2: n2_final)")
+parser.add_argument("--suffix", default="", help="added to the output file name, e.g. _run2")
+args = parser.parse_args()
 
 w = config.GRADCAM_BORDER_PX
 X, y7, _ = load_dataset(7)
@@ -64,7 +72,10 @@ versions = {"original": X_val, "ring_flattened": flattened, "ring_common": commo
 
 rows = []
 for model_name in MODEL_NAMES:
-    run_id = f"{model_name}_c4_final_s0"
+    run_id = f"{model_name}_c4_{args.tag}_s0"
+    if not (config.CHECKPOINT_DIR / f"{run_id}_best.pt").exists():
+        print(f"skip {run_id}: no checkpoint")
+        continue
     if not (config.CHECKPOINT_DIR / f"{run_id}_best.pt").exists():
         continue
     model, mean, sd = load_trained(run_id, device=torch.device("cpu"))
@@ -83,6 +94,6 @@ for model_name in MODEL_NAMES:
         print(row, flush=True)
 
 table = pd.DataFrame(rows)
-table.to_csv(config.RESULTS_DIR / "border_check_val.csv", index=False)
+table.to_csv(config.RESULTS_DIR / f"border_check_val{args.suffix}.csv", index=False)
 print(f"ring = outer {w} px; common ring level per channel (train median): {common}")
 print(table.to_string(index=False))

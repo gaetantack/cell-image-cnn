@@ -97,7 +97,7 @@ for j in range(k):
     for c, label in enumerate(("Grad-CAM", "BF", "DF")):
         axes[0, 3 * j + c].text(0.5, 1.45, label, transform=axes[0, 3 * j + c].transAxes, ha="center",
                                 fontsize=7)
-fig.suptitle(f"Grad-CAM for the true 4-class label, {MODEL_LABELS[model_name]} (seed 0), validation cells",
+fig.suptitle(f"Grad-CAM for the true 4-class label, {MODEL_LABELS[model_name]} (seed 0, run tag {args.tag}), validation cells",
              fontsize=7, y=1.0)
 fig.subplots_adjust(wspace=0.05, hspace=0.35)
 save(fig, f"gradcam_val{suffix}")

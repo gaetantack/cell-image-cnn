@@ -1,0 +1,16 @@
+model,images,macro_f1,recall_G1,recall_S,recall_G2,recall_Mitosis,share_predictions_changed
+smallcnn,original,0.755,0.873,0.689,0.785,0.664,0.0
+smallcnn,ring_flattened,0.747,0.842,0.666,0.836,0.626,0.053
+smallcnn,ring_common,0.7,0.922,0.596,0.661,0.72,0.125
+smallcnn,ring_same_class,0.605,0.93,0.52,0.481,0.813,0.225
+smallcnn,ring_other_class,0.611,0.942,0.505,0.499,0.785,0.226
+resnet18_pretrained,original,0.782,0.866,0.677,0.808,0.72,0.0
+resnet18_pretrained,ring_flattened,0.744,0.752,0.607,0.924,0.664,0.164
+resnet18_pretrained,ring_common,0.675,0.659,0.536,0.916,0.72,0.248
+resnet18_pretrained,ring_same_class,0.696,0.79,0.568,0.837,0.785,0.18
+resnet18_pretrained,ring_other_class,0.686,0.759,0.568,0.833,0.785,0.184
+resnet18_scratch,original,0.748,0.842,0.686,0.83,0.607,0.0
+resnet18_scratch,ring_flattened,0.737,0.812,0.676,0.859,0.561,0.043
+resnet18_scratch,ring_common,0.682,0.797,0.762,0.66,0.664,0.123
+resnet18_scratch,ring_same_class,0.677,0.815,0.755,0.595,0.673,0.157
+resnet18_scratch,ring_other_class,0.679,0.812,0.758,0.6,0.645,0.157

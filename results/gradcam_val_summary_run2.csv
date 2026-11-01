@@ -1,0 +1,8 @@
+phase,n_cells,heat_in_mask,mask_area_share,heat_in_border,border_area_share
+G1,2150,0.335,0.11,0.102,0.426
+S,1293,0.393,0.131,0.094,0.426
+G2,1290,0.443,0.154,0.115,0.426
+Prophase,91,0.438,0.168,0.149,0.426
+Metaphase,10,0.404,0.155,0.15,0.426
+Anaphase,2,0.42,0.16,0.137,0.426
+Telophase,4,0.436,0.186,0.156,0.426

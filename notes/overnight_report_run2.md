@@ -39,7 +39,7 @@ Branch `overnight-run-2` (from `overnight-2026-10-25`; pushed, not merged). Ever
 | ResNet18 (scratch) | 0.696 ± 0.012 | 0.745 ± 0.003 | +0.050 | 0.60 ± 0.02 (0.64) | 20/20/18 (25/25/25) |
 | 7 classes: SmallCNN | 0.560 ± 0.007 | 0.593 ± 0.034 | +0.033 | | 11/3/4 |
 
-Learning curve, run 2, seed 0, val macro-F1 at 1 / 5 / 20 / 100 %: SmallCNN 0.503 / 0.598 / 0.664 / 0.744; ResNet18-pretrained 0.540 / 0.639 / LC20 / 0.781 (`figures/learning_curve_val_run2`). These are lower than run 1 at small fractions (e.g. SmallCNN 1 %: 0.538 in run 1), probably because small-subset runs stopped very early (best epoch 2 at 5 %). Single seed.
+Learning curve, run 2, seed 0, val macro-F1 at 1 / 5 / 20 / 100 %: SmallCNN 0.503 / 0.598 / 0.664 / 0.744; ResNet18-pretrained 0.540 / 0.639 / 0.721 / 0.781 (`figures/learning_curve_val_run2`). These are lower than run 1 at small fractions (e.g. SmallCNN 1 %: 0.538 in run 1), probably because small-subset runs stopped very early (best epoch 2 at 5 %). Single seed.
 
 Full tables: `results/table_val_summary_run2.md`, `results/table_run1_vs_run2_val.md`. Run-2 configs: all three families lr 1e-3, wd 1e-4, batch 64, vflip, weighted. The ranking is unchanged (pretrained > scratch ≈ SmallCNN > RF). The pretrained − scratch gap shrank from 0.065 to 0.036. Scratch never stopped early, but its best epochs were 18–20, so 25 epochs is no longer a hard cap. Several settings changed at once (augmentation, lr, epochs, patience), so the gains cannot be assigned to one cause.
 

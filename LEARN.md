@@ -28,6 +28,13 @@ The darkfield (Ch6) image is side-scattered light. In an imaging flow cytometer 
 Summarises the 18 SmallCNN runs (augment none/vflip/basic × balance weighted/oversample × seeds 0–2) and picks AUG*/BAL* by a rule fixed before the runs: highest mean val macro-F1; if the best two are within one seed SD, higher mitosis recall; if that is also within one SD, vflip > none > basic, then weighted > oversample. Writes `results/run2_phaseA_val.md` and `results/run2_aug_bal_choice.json`; the queue reads the JSON.
 - **Why a fixed rule:** deciding the rule after seeing the numbers would let us pick what we like (a form of p-hacking).
 
+### Run-2 helper scripts
+- `scripts/fig_phaseA_run2.py`: Phase A figure. Macro-F1 and mitosis recall per setting, mean ± SD with single seeds as small marks. Shape (filled circle / open square) shows the balancing, so the figure also works in grey-scale.
+- `scripts/compare_runs.py`: run 1 vs run 2 per CNN family (config, macro-F1, mitosis recall, best epoch, epochs run) → `results/table_run1_vs_run2_val.md`.
+- `--tag` / `--suffix` options (`make_results_table`, `fig_model_comparison`, `fig_confusion`, `fig_umap`, `pseudotime`, `fig_gradcam`, `border_check`; `fig_learning_curve` uses `--prefix`): choose the CNN runs by run tag (run 1 `final`, run 2 `n2_final`) and keep both versions of every table and figure. The random forest rows are always the run-1 ones, because the forest did not change.
+- `scripts/queue_run2_A.sh`, `queue_run2_BC.sh`, `queue_run2_CE.sh`, `queue_run2_lc_pretrained.sh`: the night's job queues. Each run is skipped if its run_id is already in the log, so a queue can be restarted at any time. `CE` starts an "item" (3 seeds or 3 label fractions of one family) only if all of it should end before 06:30.
+- **Why one run tag per night:** the log is append-only, so run 1 and run 2 sit side by side in one file and are told apart only by the `n2_` prefix of the run_id.
+
 ### Examiner questions, run 2 (practice for the closed-book oral)
 <details>
 <summary>3 new questions with model answers</summary>

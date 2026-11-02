@@ -213,7 +213,7 @@ def main(argv=None):
         model.load_state_dict(ck["model"])
         opt.load_state_dict(ck["opt"])
         sched.load_state_dict(ck["sched"])
-        gen.set_state(ck["gen"])
+        gen.set_state(ck["gen"].cpu())  # map_location moved it to the device; the CPU Generator needs a CPU tensor
         start_epoch, best_f1, best_epoch = ck["epoch"] + 1, ck["best_f1"], ck["best_epoch"]
         elapsed, history = ck["elapsed"], ck["history"]
         print(f"resumed {run_id} at epoch {start_epoch}")

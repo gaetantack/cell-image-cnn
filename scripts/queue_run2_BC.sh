@@ -9,6 +9,7 @@
 # Finished runs are skipped (run_id already in results/experiments.csv); interrupted runs resume.
 # Run:  nohup bash scripts/queue_run2_BC.sh > logs/queue_run2_BC.out 2>&1 &
 cd "$(dirname "$0")/.."
+source scripts/queue_common.sh
 export PYTORCH_ENABLE_MPS_FALLBACK=1
 mkdir -p logs
 FAMILIES="smallcnn resnet18_pretrained resnet18_scratch"
@@ -46,6 +47,7 @@ for MODEL in $FAMILIES; do
   for K in $(seq 0 $((N_GRID - 1))); do
     ARGS=$(python -c "from src import config; g = config.CNN_GRID_RUN2[$K]; print(f\"--lr {g['lr']} --weight-decay {g['weight_decay']} --batch-size {g['batch_size']}\")")
     TAG=$(printf "n2_tune%02d" $K)
+    skip_if_done ${MODEL}_c4_${TAG}_s0 && continue   # before the log redirect below
     fits $(est tune $MODEL) || { echo "$(date '+%H:%M') skip $MODEL $TAG: too late"; continue; }
     echo "$(date '+%H:%M') start $MODEL $TAG $ARGS"
     python -m src.train --model $MODEL --classes 4 --seed 0 $ARGS --epochs $TUNE_EPOCHS \
@@ -61,6 +63,7 @@ final_runs() {  # $1 = number of classes
   for MODEL in $FAMILIES; do
     BEST=$(python -m scripts.best_cnn_config $MODEL n2_tune) || { echo "no tuning result for $MODEL"; continue; }
     for SEED in 0 1 2; do
+      skip_if_done ${MODEL}_c$1_n2_final_s${SEED} && continue   # before the log redirect below
       fits $(est final $MODEL) || { echo "$(date '+%H:%M') skip $MODEL final c$1 s$SEED: too late"; continue; }
       echo "$(date '+%H:%M') start $MODEL n2_final c$1 seed $SEED $BEST"
       python -m src.train --model $MODEL --classes $1 --seed $SEED $BEST --epochs $EPOCHS \
@@ -77,6 +80,7 @@ final_runs 7
 for MODEL in $FAMILIES; do
   BEST=$(python -m scripts.best_cnn_config $MODEL n2_tune) || continue
   for FRAC in 0.01 0.05 0.2; do
+    skip_if_done ${MODEL}_c4_n2_lf${FRAC}_s0 && continue   # before the log redirect below
     fits $(est final $MODEL) || { echo "$(date '+%H:%M') skip $MODEL n2_lf$FRAC: too late"; continue; }
     echo "$(date '+%H:%M') start $MODEL n2_lf$FRAC seed 0"
     python -m src.train --model $MODEL --classes 4 --seed 0 $BEST --epochs $EPOCHS --label-fraction $FRAC \

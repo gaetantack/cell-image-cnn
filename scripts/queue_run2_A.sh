@@ -6,6 +6,7 @@
 # Finished runs are skipped (run_id already in results/experiments.csv); interrupted runs resume.
 # Run:  nohup bash scripts/queue_run2_A.sh > logs/queue_run2_A.out 2>&1 &
 cd "$(dirname "$0")/.."
+source scripts/queue_common.sh
 export PYTORCH_ENABLE_MPS_FALLBACK=1
 mkdir -p logs
 EPOCHS=$(python -c "from src import config; print(config.RUN2_MAX_EPOCHS)")
@@ -16,6 +17,7 @@ for SEED in 0 1 2; do
   for AUG in none vflip basic; do
     for BAL in weighted oversample; do
       TAG=n2_A_${AUG}_${BAL}
+      skip_if_done smallcnn_c4_${TAG}_s${SEED} && continue   # before the log redirect below
       echo "$(date '+%H:%M') start smallcnn $TAG seed $SEED"
       python -m src.train --model smallcnn --classes 4 --seed $SEED $BEST --epochs $EPOCHS \
         --augment $AUG --balance $BAL --run-tag $TAG --resume \

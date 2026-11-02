@@ -8,6 +8,7 @@
 # All VALIDATION. Waits for any training run that is still going (e.g. one started by queue_run2_BC.sh).
 # Run:  nohup bash scripts/queue_run2_CE.sh > logs/queue_run2_CE.out 2>&1 &
 cd "$(dirname "$0")/.."
+source scripts/queue_common.sh
 export PYTORCH_ENABLE_MPS_FALLBACK=1
 FAMILIES="smallcnn resnet18_pretrained resnet18_scratch"
 AUG=$(python -c "import json; from src import config; print(json.loads(config.RUN2_CHOICE_FILE.read_text())['augment'])")
@@ -27,6 +28,7 @@ echo "$(date '+%H:%M') queue CE starts, AUG*=$AUG BAL*=$BAL"
 
 train() {  # $1 model, $2 classes, $3 seed, $4 run tag, rest: extra args
   local MODEL=$1 K=$2 SEED=$3 TAG=$4; shift 4
+  skip_if_done ${MODEL}_c${K}_${TAG}_s${SEED} && return   # before the log redirect below
   BEST=$(python -m scripts.best_cnn_config $MODEL n2_tune) || { echo "no tuning result for $MODEL"; return; }
   echo "$(date '+%H:%M') start $MODEL $TAG c$K seed $SEED $BEST $*"
   python -m src.train --model $MODEL --classes $K --seed $SEED $BEST --epochs $EPOCHS --augment $AUG \

@@ -20,12 +20,15 @@ On the 7-class task (secondary result; 4-class hyperparameters reused), the fore
 
 With the same tuning grid, augmentation, balancing and training length (up to 25 epochs with early stopping), the pretrained ResNet18 reached 0.781 ± 0.007 and the same architecture trained from scratch 0.745 ± 0.003, a difference of 0.036, about five times the larger SD. The difference is larger for mitosis: recall 0.75 ± 0.03 vs 0.60 ± 0.02. The scratch network matched SmallCNN (0.744 ± 0.010) despite 29 times more parameters. All three scratch runs used the full 25 epochs, but their best epochs were 18–20, so they were not still improving at the end. Two of the three pretrained runs stopped early (best epochs 6 and 11). In tuning (4 epochs), all three families selected the same learning rate (1e-3) and weight decay (1e-4), inside the grid.
 
-*Learning curve (currently seed 0 only; seeds 1–2 and the scratch ResNet18 subsets are running, `scripts/queue_run2_lc_finish.sh` — update numbers when done; Fig. learning_curve_val_run2; `results/learning_curve_val_run2.csv`).* Each subset run had as many gradient steps per epoch as a full run, up to 25 epochs with early stopping. Validation macro-F1 at 1 / 5 / 20 / 100% of the labelled training cells (100% = mean of the 3 final runs):
-- SmallCNN: 0.503 / 0.598 / 0.664 / 0.744
-- pretrained ResNet18: 0.540 / 0.639 / 0.721 / 0.781
-- scratch ResNet18: only 100% (0.745); subsets running.
+*Learning curve (Fig. learning_curve_val_run2; `results/learning_curve_val_run2.csv`).* Each subset run had as many gradient steps per epoch as a full run, up to 25 epochs with early stopping. Validation macro-F1, mean ± SD over seeds 0, 1 and 2, at 1 / 5 / 20 / 100% of the labelled training cells (225 / 1,129 / 4,517 / 22,586 cells; 100% = the 3 final runs):
 
-At every fraction the pretrained network was ahead of SmallCNN: by 0.04 at 1–5% and by 0.06 at 20% (0.721 vs 0.664). With 5% of the labels (1,129 cells) the pretrained ResNet18 reached the level of the random forest trained on all labels (0.632). These are single-seed points, and several small-subset runs stopped very early (SmallCNN 5%: best epoch 2), so differences of a few hundredths are within noise.
+| Model | 1% | 5% | 20% | 100% |
+|---|---|---|---|---|
+| SmallCNN | 0.515 ± 0.012 | 0.588 ± 0.010 | 0.647 ± 0.020 | 0.744 ± 0.010 |
+| ResNet18, pretrained | 0.547 ± 0.007 | 0.648 ± 0.008 | 0.717 ± 0.015 | 0.781 ± 0.007 |
+| ResNet18, scratch | 0.517 ± 0.011 | 0.597 ± 0.006 | 0.658 ± 0.009 | 0.745 ± 0.003 |
+
+At every fraction, the pretrained network was ahead of the same architecture trained from scratch: by 0.030 at 1%, 0.052 at 5%, 0.059 at 20% and 0.036 at 100%. The gap was largest at 5–20%, where it is about 4–7 times the larger SD. With 5% of the labels (1,129 cells), the pretrained ResNet18 (0.648) scored about as well as SmallCNN and the scratch ResNet18 with 20% (0.647 and 0.658), and above the random forest trained on all labels (0.632). SmallCNN and the scratch ResNet18 were within one SD of each other at every fraction. At 1% (225 cells), the scratch ResNet18 did not learn beyond its first epoch (0.517 ± 0.011), whereas the pretrained ResNet18 reached 0.547 ± 0.007. The scratch network fitted the 225 training cells within the first epoch (one epoch shows each cell about 100 times; train loss ≤ 0.0002 from epoch 1–3 on), and its validation score did not improve afterwards: best epoch 0 for seeds 0 and 1, and flat at 0.515–0.523 for seed 2. SmallCNN at 1% scored about the same as the scratch ResNet18 (0.515 ± 0.012). Many small-subset runs reached their best epoch early (best epoch 6 or earlier in 14 of the 18 runs at 1–5%), so early stopping on the noisy validation curve adds to the seed spread there.
 
 *Take-home:* on validation, ImageNet pretraining gives a modest but clear gain in macro-F1 and a larger gain in mitosis recall, with the same training budget.
 
@@ -96,7 +99,7 @@ For the forest, adding the raw darkfield intensity levels, which track the backg
 
 - *Instrument geometry.* The models use the fixed left/right direction of the darkfield images (left-right flips cost the chosen SmallCNN 0.14 macro-F1 and most of its mitosis recall). This direction comes from the instrument and is the same for every cell, so it is not leakage, but the models may not transfer to another cytometer or another mounting of the optics. A direction-free model (rotations and both flips) scored about 0.02 lower and varied more between seeds.
 - *Augmentation hardly matters.* All six augmentation × balancing settings were within 0.03 of each other; the chosen setting won a tie, not a clear contest.
-- *Early stopping on a noisy curve.* Models were early-stopped on validation macro-F1 with patience 6. The curve is noisy, especially for mitosis (107 validation cells), and some runs kept a very early epoch (best epochs 2–5), most often in the small learning-curve subsets. A smoothed or fixed-epoch selection was not tried, because it would require re-running all models.
+- *Early stopping on a noisy curve.* Models were early-stopped on validation macro-F1 with patience 6. The curve is noisy, especially for mitosis (107 validation cells), and some runs kept a very early epoch (best epochs 0–5), most often in the small learning-curve subsets (the 1% scratch ResNet18 runs fitted their 225 training cells within the first epoch). A smoothed or fixed-epoch selection was not tried, because it would require re-running all models.
 - *Validation used for selection.* All numbers in this draft are on the validation set that was also used for model selection and early stopping, so they are optimistic; the test set gives the final numbers.
 - *Seven classes.* The 7-class score depends on 6 anaphase/telophase validation cells, and was only run for the forest and SmallCNN.
 

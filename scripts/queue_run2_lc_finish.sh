@@ -16,6 +16,11 @@ echo "$(date '+%H:%M') learning-curve queue starts, AUG*=$AUG BAL*=$BAL"
 
 train_lc() {  # $1 model, $2 seed, $3 label fraction
   local MODEL=$1 SEED=$2 FRAC=$3 TAG=n2_lf$3
+  local RUN_ID=${MODEL}_c4_${TAG}_s${SEED}
+  # Skip finished runs here, before the log redirect below would overwrite their training log.
+  if python -c "import sys; from src.experiments import has_run; sys.exit(0 if has_run('$RUN_ID') else 1)"; then
+    echo "$(date '+%H:%M') skip $RUN_ID: already in experiments.csv"; return
+  fi
   BEST=$(python -m scripts.best_cnn_config $MODEL n2_tune) || { echo "no tuning result for $MODEL"; return; }
   echo "$(date '+%H:%M') start $MODEL $TAG seed $SEED $BEST"
   python -m src.train --model $MODEL --classes 4 --seed $SEED $BEST --epochs $EPOCHS --augment $AUG \

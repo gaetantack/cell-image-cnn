@@ -131,3 +131,8 @@ Note: the queue's 06:30 guard counts minutes from noon, so in the daytime (befor
 5. Patience 6 kept; stated as a limitation.
 Drafts (`results_val_draft.md` Limitations section and pilot note, `methods.md`) and PROJECT.md decisions log updated.
 The learning-curve queue was stopped at about 10:00 on 1 Nov by the user and will be run overnight instead.
+
+## Learning curve finished (2026-11-02)
+All 27 learning-curve runs (3 families × 1/5/20 % × seeds 0–2) are in `experiments.csv`. The queue had crashed on `resnet18_scratch n2_lf0.01 s0` when resuming on MPS (`RNG state must be a torch.ByteTensor`); fixed in `src/train.py` (`ck["gen"].cpu()`, with a test), and that run was resumed from epoch 5. Values (mean ± SD) are in `results_val_draft.md` and `results/learning_curve_val_run2.csv`.
+- The 1 % scratch ResNet18 runs memorised their 225 training cells within the first epoch (one epoch shows each cell ≈ 100 times; train loss ≤ 0.0002 from epoch 1–3 on). Best epoch was 0 for seeds 0 and 1; seed 2 stayed flat (val macro-F1 0.515–0.523) and kept epoch 5. So the 1 % scratch point (0.517 ± 0.011) is close to an epoch-0 model.
+- Re-running the queue overwrote the 21 per-run `.log` files with one-line "skip" messages (`>` redirect; `logs/` is gitignored). Per-epoch histories (`logs/history/*.json`) and all metrics are intact.

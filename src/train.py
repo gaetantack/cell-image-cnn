@@ -7,6 +7,8 @@ Example:
 What one run does:
 1. Load brightfield + darkfield images (src.data) and the fixed train/val rows (src.splits). Never test.
 2. Optionally keep a stratified fraction of the TRAIN rows (--label-fraction, learning curve).
+   Optionally mask train AND val images (--mask-mode cell_only / background_only, run 4, src.masking)
+   and optionally permute the training labels (--shuffle-labels, run-4 null control).
 3. Normalise each channel with the mean and SD of the (kept) training images only.
 4. Train with AdamW and a cosine learning-rate schedule; after every epoch score val macro-F1,
    keep the best weights, and stop early if val macro-F1 has not improved for EARLY_STOP_PATIENCE epochs.
@@ -30,6 +32,7 @@ from src import config
 from src.data import load_dataset
 from src.evaluate import evaluate
 from src.experiments import has_run, log_experiment
+from src.masking import masked_split_images
 from src.models import MODEL_NAMES, build_model, count_parameters
 from src.splits import load_split
 
@@ -160,6 +163,10 @@ def parse_args(argv=None):
     p.add_argument("--augment", choices=tuple(AUGMENTATIONS), default="basic")
     p.add_argument("--balance", choices=("none", "weighted", "oversample"), default="weighted")
     p.add_argument("--label-fraction", type=float, default=1.0)
+    p.add_argument("--mask-mode", choices=config.MASK_MODES, default="original",
+                   help="run 4: train and val images masked with src.masking (default: unchanged images)")
+    p.add_argument("--shuffle-labels", action="store_true",
+                   help="run 4 null control: randomly permute the TRAINING labels (val labels stay true)")
     p.add_argument("--run-tag", default="manual", help="part of the run_id, e.g. tune03, final, lf0.05")
     p.add_argument("--smoke-test", action="store_true", help="tiny subset, 1 epoch, nothing logged")
     p.add_argument("--resume", action="store_true", help="continue from checkpoints/<run_id>_last.pt")
@@ -190,11 +197,19 @@ def main(argv=None):
         rng = np.random.default_rng(0)
         train, val = np.sort(rng.choice(train, 256, replace=False)), np.sort(rng.choice(val, 128, replace=False))
         samples_per_epoch = len(train)
-    mean, sd = channel_stats(X[train])
+    # Masking (run 4): the same mask mode for train and val; the fill value comes from training cells only.
+    # Done before normalisation, so the normalisation stats describe the images the network actually sees;
+    # augmentation (e.g. vflip) is applied later, per batch, to the masked images.
+    (X_train_np, X_val_np), fill = masked_split_images(X, args.mask_mode, train, [train, val])
+    if fill is not None:
+        print(f"mask mode {args.mask_mode}, fill per channel {fill.tolist()}")
+    mean, sd = channel_stats(X_train_np)
     mean, sd = mean.to(device), sd.to(device)
-    X_train = torch.from_numpy(X[train]).to(device)  # kept as uint8 on the device to save memory
-    X_val = torch.from_numpy(X[val]).to(device)
+    X_train = torch.from_numpy(X_train_np).to(device)  # kept as uint8 on the device to save memory
+    X_val = torch.from_numpy(X_val_np).to(device)
     y_train_np, y_val = y[train], y[val]
+    if args.shuffle_labels:  # null control: labels no longer belong to their images (same class counts)
+        y_train_np = np.random.default_rng(args.seed).permutation(y_train_np)
     y_train = torch.from_numpy(y_train_np).to(device)
 
     model = build_model(args.model, args.classes).to(device)
@@ -267,6 +282,12 @@ def main(argv=None):
         "n_params": count_parameters(model), "run_tag": args.run_tag,
         "input_size": getattr(model, "input_size", config.IMAGE_SIZE),
     }
+    if args.mask_mode != "original":  # only added when used, so older settings strings stay comparable
+        settings["mask_mode"] = args.mask_mode
+        settings["mask_dilation_px"] = config.MASK_DILATION_PX
+        settings["mask_fill"] = fill.tolist()
+    if args.shuffle_labels:
+        settings["shuffle_labels"] = True
     log_experiment(args.model, args.classes, "val", args.seed, settings, m, elapsed,
                    run_id=run_id, device=str(device))
     config.PREDS_DIR.mkdir(parents=True, exist_ok=True)

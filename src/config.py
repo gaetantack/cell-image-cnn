@@ -119,3 +119,9 @@ GRADCAM_CELLS_PER_CLASS = 4  # cells shown per class in the Grad-CAM grid
 UMAP_N_NEIGHBORS = 30
 UMAP_MIN_DIST = 0.3
 UMAP_SEED = 0
+
+# Run 4 (overnight 2026-11-06/07, run tags start with "n4_"): masking experiment (RQ5)
+RUN4_TAG = "n4_"
+MASK_DILATION_PX = 3  # cell masks are dilated by this many pixels (blurry cells are under-segmented)
+MASKS_FILE = PROCESSED_DIR / "masks_trainval_dil3.npz"  # cached dilated masks, TRAIN + VAL rows only
+MASK_MODES = ("original", "cell_only", "background_only")

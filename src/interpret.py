@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from src import config
 from src.data import load_dataset
 from src.experiments import read_log
+from src.masking import masked_split_images
 from src.models import build_model
 from src.splits import load_split
 from src.train import channel_stats, get_device, subsample_train, to_input
@@ -21,7 +22,9 @@ def load_trained(run_id, device=None):
     settings = json.loads(row["settings"])
     X, y, _ = load_dataset(int(row["n_classes"]))
     train = subsample_train(load_split("train"), y, settings["label_fraction"], int(row["seed"]))
-    mean, sd = channel_stats(X[train])
+    # Run-4 masked models were normalised with the stats of their masked training images
+    (X_train,), _ = masked_split_images(X, settings.get("mask_mode", "original"), train, [train])
+    mean, sd = channel_stats(X_train)
     model = build_model(row["model"], int(row["n_classes"]))
     model.load_state_dict(torch.load(config.CHECKPOINT_DIR / f"{run_id}_best.pt", map_location="cpu"))
     return model.to(device).eval(), mean.to(device), sd.to(device)

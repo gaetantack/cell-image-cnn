@@ -1,5 +1,36 @@
 # LEARN.md — what each file does and why (for the oral exam)
 
+## Added overnight 2026-11-06/07, run 4 (by Claude, check every point)
+
+### What a masking experiment can and cannot show (`src/masking.py`, `scripts/masking_check.py`, `scripts/queue_run4.sh`)
+**Idea.** If the network classifies cell-cycle phases, it should do well when it sees only the cell (*cell only*) and badly when it sees only the background (*background only*). The masks come from `src.features.cell_mask` on the brightfield image, dilated by 3 px.
+- **Why masks from brightfield:** brightfield shows the cell outline as a dark rim on a grey background, so a simple Otsu threshold finds it. In darkfield the cell interior is dark like the background, so the outline is hard to find. And fluorescence (Ch4) may never be used: it made the labels.
+- **Why dilate by 3 px:** blurry, out-of-focus cells are under-segmented (the mask catches only the bright core). Without dilation, part of the cell (its halo) would stay in the "background-only" image, and the background model would partly see the cell.
+- **Why one constant fill for every cell:** the darkfield background level depends on the phase (G1 brighter than metaphase, PROJECT.md observations). If each cell were filled with its own background level, the cell-only image would still carry that level, i.e. the shortcut we want to remove. One constant (the median training background: BF 94, DF 39) carries no class information. It comes from training cells only, so no val information leaks in.
+- **Why the background-only model is the control:** it tells how much is predictable *without* the cell. If it scores near chance, the background carries little class information; if it scores well above chance, something outside the cell (or leaking through the mask) predicts the phase.
+- **Two ways to run it, and why both:** (1) *inference only*: the normal model scored on masked images. A drop can mean "it needs the background" OR just "it has never seen flat grey surroundings" (distribution shift), so this alone cannot prove a shortcut. (2) *train on masked images*: if a model trained on cell-only images is almost as good as the original, the cell alone carries the information.
+- **What it cannot show:** (a) A mask is an image edit: the outline of the filled region still shows the cell's size and shape. A background-only model can therefore learn cell size from the "hole", so it is not purely background (we measure this with a mask-area-only logistic regression). (b) A good cell-only score does not prove that the original model *used* the cell; it shows that the cell is *sufficient*. (c) The mask is imperfect (missed rims, 1 empty mask), so a little cell can remain in background-only images.
+
+### `scripts/final_test.py` — the one test run, rehearsed on val
+Evaluates the frozen models exactly as the plan says (CNN checkpoints `n2_final`, RF re-fitted on train, chance baselines). `--split test` is refused unless the flag `--i-understand-this-is-the-one-test-run` is given (tested in `tests/test_final_test.py`), and it refuses a second test run if `results/test_results.csv` exists. On val it must reproduce every logged val macro-F1 (`results/final_test_val_check.csv`): this shows the reload path is right before the test is touched.
+- **ROC-AUC vs PR-AUC** (`src.evaluate.ranking_metrics`): both use the class probability as a score and ask "are cells of class k ranked above the others?" ROC-AUC (chance 0.5) is dominated by the many negatives, so a rare class can look good. PR-AUC (average precision; chance = prevalence, 0.022 for mitosis) asks how pure the top of the ranking is, which is what matters for finding rare mitotic cells.
+- **Out-of-bag (OOB) accuracy:** each tree is trained on a bootstrap sample (drawn with replacement), so about 37 % of training cells are not used by that tree. Scoring each training cell with only the trees that did not see it gives an almost free validation estimate. It should be close to val accuracy; a large gap would mean the val set differs from train or something leaks.
+- **mtry:** `max_features` 0.33 means 0.33 × 28 = 9 randomly chosen features are considered at each split (sklearn default for classification: √28 ≈ 5). More features per split = stronger but more similar trees.
+
+### Label-shuffle control (`src.train --shuffle-labels`, tag `n4_shuffled`)
+The training labels are randomly permuted (same class counts), the validation labels stay true. A network can then only memorise noise, so its val score should be at chance. If it were clearly above chance, information would leak from somewhere other than the image–label relation (e.g. the split or the normalisation).
+
+### Examiner questions, run 4
+<details>
+<summary>2 questions with model answers</summary>
+
+**1. Your background-only model is above chance. Doesn't that prove a background shortcut?**
+Not by itself. The background-only image still shows the outline of the masked cell, so cell size and shape are visible; size alone already separates G1 from G2 to some extent (we measure it with a logistic regression on the mask area). The mask also misses part of some cells. So the question is whether background-only is clearly above the *mask-area* reference, not above chance. And the cell-only model, which never sees the background, scores close to the original, which shows the cell carries most of the information.
+
+**2. Why didn't you simply mask with each cell's own background median?**
+Because that level differs between phases in the darkfield channel (G1 ≈ 45 vs metaphase ≈ 24 grey levels). Filling with it would put the shortcut back into every cell-only image. One constant from the training cells removes it and cannot leak validation information.
+</details>
+
 ## Added overnight 2026-10-31/11-01, run 2 (by Claude, check every point)
 
 ### `src/train.py` — new augmentation option `vflip`

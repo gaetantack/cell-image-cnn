@@ -14,7 +14,9 @@ The two swaps both put a real background with a seam at the ring edge into the i
 difference is whether that background comes from the right class. So "same class" is the control for
 the seam, and the drop from "same class" to "other class" is what the background itself contributes.
 If recall of a class drops a lot when only the ring changes, the network uses the background for it.
-Seed-0 four-class final run of every CNN, run on the CPU (the GPU is used by the training queue).
+Four-class final runs of every CNN, seed 0 by default (`--seeds 0 1 2` for all seeds, run 4), on the CPU
+(the GPU is used by the training queue). With several seeds the CSV also gets rows seed = "mean" and "sd".
+The donor cells of the swaps are drawn once (rng seed 0), so every model and seed sees the same edited images.
 `--tag n2_final --suffix _run2`: the run-2 final runs, written to results/border_check_val_run2.csv.
 Writes results/border_check_val.csv. VALIDATION numbers only.
 """
@@ -35,6 +37,7 @@ from src.train import predict
 parser = argparse.ArgumentParser()
 parser.add_argument("--tag", default="final", help="run tag of the CNN final runs (run 2: n2_final)")
 parser.add_argument("--suffix", default="", help="added to the output file name, e.g. _run2")
+parser.add_argument("--seeds", type=int, nargs="+", default=[0], help="training seeds of the final runs")
 args = parser.parse_args()
 
 w = config.GRADCAM_BORDER_PX
@@ -72,28 +75,34 @@ versions = {"original": X_val, "ring_flattened": flattened, "ring_common": commo
 
 rows = []
 for model_name in MODEL_NAMES:
-    run_id = f"{model_name}_c4_{args.tag}_s0"
-    if not (config.CHECKPOINT_DIR / f"{run_id}_best.pt").exists():
-        print(f"skip {run_id}: no checkpoint")
-        continue
-    if not (config.CHECKPOINT_DIR / f"{run_id}_best.pt").exists():
-        continue
-    model, mean, sd = load_trained(run_id, device=torch.device("cpu"))
-    pred_original = None
-    for version, images in versions.items():
-        with torch.no_grad():
-            pred = predict(model, torch.from_numpy(images), mean, sd)
-        if pred_original is None:
-            pred_original = pred
-        m = evaluate(y4[val], pred, config.CLASSES_4)
-        row = {"model": model_name, "images": version, "macro_f1": round(m["macro_f1"], 3)}
-        for c, r in m["recall"].items():
-            row[f"recall_{c}"] = round(r, 3)
-        row["share_predictions_changed"] = round(float((pred != pred_original).mean()), 3)
-        rows.append(row)
-        print(row, flush=True)
+    for seed in args.seeds:
+        run_id = f"{model_name}_c4_{args.tag}_s{seed}"
+        if not (config.CHECKPOINT_DIR / f"{run_id}_best.pt").exists():
+            print(f"skip {run_id}: no checkpoint")
+            continue
+        model, mean, sd = load_trained(run_id, device=torch.device("cpu"))
+        pred_original = None
+        for version, images in versions.items():
+            with torch.no_grad():
+                pred = predict(model, torch.from_numpy(images), mean, sd)
+            if pred_original is None:
+                pred_original = pred
+            m = evaluate(y4[val], pred, config.CLASSES_4)
+            row = {"model": model_name, "seed": seed, "images": version, "macro_f1": round(m["macro_f1"], 3)}
+            for c, r in m["recall"].items():
+                row[f"recall_{c}"] = round(r, 3)
+            row["share_predictions_changed"] = round(float((pred != pred_original).mean()), 3)
+            rows.append(row)
+            print(row, flush=True)
 
 table = pd.DataFrame(rows)
+if len(args.seeds) > 1:  # add mean and SD over seeds per model and image version
+    numeric = [c for c in table.columns if c not in ("model", "seed", "images")]
+    grouped = table.groupby(["model", "images"], sort=False)[numeric]
+    for stat, frame in (("mean", grouped.mean()), ("sd", grouped.std(ddof=1))):
+        frame = frame.round(3).reset_index()
+        frame.insert(1, "seed", stat)
+        table = pd.concat([table, frame], ignore_index=True)
 table.to_csv(config.RESULTS_DIR / f"border_check_val{args.suffix}.csv", index=False)
 print(f"ring = outer {w} px; common ring level per channel (train median): {common}")
 print(table.to_string(index=False))

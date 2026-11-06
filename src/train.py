@@ -151,6 +151,16 @@ def predict(model, X_dev, mean, sd):
     return torch.cat(preds).numpy()
 
 
+@torch.no_grad()
+def predict_proba(model, X_dev, mean, sd):
+    """Class probabilities (softmax of the logits) for every image, numpy (N, K). argmax = predict()."""
+    model.eval()
+    out = []
+    for i in range(0, len(X_dev), config.EVAL_BATCH_SIZE):
+        out.append(torch.softmax(model(to_input(X_dev[i:i + config.EVAL_BATCH_SIZE], mean, sd)), dim=1).cpu())
+    return torch.cat(out).numpy()
+
+
 def parse_args(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--model", choices=MODEL_NAMES, required=True)

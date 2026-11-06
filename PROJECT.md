@@ -53,6 +53,20 @@ Predict the cell cycle phase of single Jurkat cells from label-free brightfield 
 - **Tier 2 (should):** RQ3 ablation; Grad-CAM for RQ5.
 - **Tier 3 (if time):** pseudotime for RQ4; masking for RQ5; AML dataset.
 
+## 7a. Final configuration per model (frozen before the test) — DRAFT, to confirm by user
+Drafted overnight 2026-11-07 by Claude (run 4). The plan requires this to be fixed **before** the test set is touched. Nothing below may change after it is confirmed; `scripts/final_test.py` implements exactly this.
+
+| Model | What is evaluated on test | Settings | Why this one |
+|---|---|---|---|
+| Chance (majority, stratified) | `DummyClassifier(most_frequent / stratified)`, fitted on train labels, seeds 0–2 | as `scripts/run_baselines.py` | Lower bound next to every model (rigour rule) |
+| Random forest | Re-fitted on train, seeds 0–2, 4 and 7 classes | feature set `main` (28 features), 500 trees, `max_features` 0.33 (= 9 features per split), `min_samples_leaf` 5, `class_weight` balanced, median imputation fitted on train; config of `rf_c4_tune08_s0`, best of 12 (run 1) | Selected on val with the same 12-config budget as the CNNs; unchanged in run 2 |
+| Random forest + raw DF levels (RQ5 side) | as RF, feature set `raw_dark`, 4 classes | same configuration as the RF | Side experiment only |
+| SmallCNN | Checkpoints `smallcnn_c4_n2_final_s{0,1,2}` (and `smallcnn_c7_n2_final_s{0,1,2}`) | lr 1e-3, wd 1e-4, batch 64, vflip + weighted loss, max 25 epochs, early stopping patience 6 on val macro-F1 (best-epoch weights) | Run 2 = paper result (user 2026-11-01); config = best of 12 (`n2_tune`) |
+| ResNet18 (ImageNet) | Checkpoints `resnet18_pretrained_c4_n2_final_s{0,1,2}` | as SmallCNN; 66 → 128 px, conv1 = mean of RGB filters | same |
+| ResNet18 (scratch) | Checkpoints `resnet18_scratch_c4_n2_final_s{0,1,2}` | as SmallCNN; 66 → 128 px | same |
+
+Not evaluated on test: tuning runs, Phase A runs, learning-curve runs, masked (`n4_`) runs, 7-class ResNets (dropped). Metrics: macro-F1 (primary), balanced accuracy, per-class recall, confusion matrices, one-vs-rest ROC-AUC and PR-AUC (mitosis PR-AUC next to its prevalence), inference time per 1,000 cells. Reported as mean ± SD over seeds 0–2. The val dress rehearsal (`results/table_val_summary.md`, `results/final_test_val_check.csv`) reproduces every logged val macro-F1. **Status: to confirm by user.**
+
 ## 8. Decisions log
 | Date | Decision | Reason |
 |---|---|---|

@@ -35,3 +35,28 @@ def test_majority_classifier_scores_chance():
     assert m["recall"]["b"] == m["recall"]["c"] == 0
     assert m["macro_f1"] == pytest.approx((2 * 0.8 / 1.8) / 3)
     assert m["confusion_matrix"].shape == (3, 3)
+
+
+def test_ranking_metrics_perfect_and_chance():
+    from src.evaluate import ranking_metrics
+    y = np.array([0, 0, 1, 1, 2, 2, 2, 2])
+    perfect = np.eye(3)[y]
+    r = ranking_metrics(y, perfect, NAMES)
+    assert r["roc_auc_macro"] == 1.0 and r["pr_auc_macro"] == 1.0
+    # constant scores (class prior for every cell): ROC-AUC 0.5, PR-AUC = prevalence of the class
+    prior = np.tile([0.25, 0.25, 0.5], (len(y), 1))
+    r = ranking_metrics(y, prior, NAMES)
+    assert r["roc_auc"] == pytest.approx({"a": 0.5, "b": 0.5, "c": 0.5})
+    assert r["pr_auc"] == pytest.approx({"a": 0.25, "b": 0.25, "c": 0.5})
+    assert r["prevalence"] == pytest.approx({"a": 0.25, "b": 0.25, "c": 0.5})
+
+
+def test_ranking_metrics_hand_computed():
+    from src.evaluate import ranking_metrics
+    # class 1 vs rest, scores: positives 0.9, 0.4; negatives 0.6, 0.1 -> 3 of 4 pairs ordered -> AUC 0.75
+    y = np.array([1, 1, 0, 0])
+    proba = np.array([[0.1, 0.9], [0.6, 0.4], [0.4, 0.6], [0.9, 0.1]])
+    r = ranking_metrics(y, proba, ("a", "b"))
+    assert r["roc_auc"]["b"] == pytest.approx(0.75)
+    # ranking by score: 0.9 (pos), 0.6 (neg), 0.4 (pos), 0.1 -> AP = (1/1 + 2/3) / 2
+    assert r["pr_auc"]["b"] == pytest.approx((1 + 2 / 3) / 2)

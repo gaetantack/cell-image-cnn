@@ -7,6 +7,7 @@ Mask = brightfield cell mask (`src.features.cell_mask`) dilated by 3 px; fill = 
 | original | SmallCNN | original | 3 | 0.744 ± 0.010 | 0.744 ± 0.012 | 0.857 ± 0.015 | 0.689 ± 0.016 | 0.797 ± 0.023 | 0.632 ± 0.039 |
 | trained on masked | SmallCNN | cell only | 3 | 0.729 ± 0.019 | 0.713 ± 0.025 | 0.852 ± 0.008 | 0.688 ± 0.013 | 0.771 ± 0.047 | 0.539 ± 0.076 |
 | trained on masked | SmallCNN | background only | 3 | 0.558 ± 0.028 | 0.601 ± 0.037 | 0.826 ± 0.019 | 0.545 ± 0.042 | 0.584 ± 0.174 | 0.449 ± 0.219 |
+| trained on masked | SmallCNN | background only, fixed disc | 3 | 0.450 ± 0.007 | 0.492 ± 0.019 | 0.727 ± 0.060 | 0.408 ± 0.060 | 0.441 ± 0.017 | 0.393 ± 0.065 |
 | original | ResNet18 (ImageNet) | original | 3 | 0.781 ± 0.007 | 0.777 ± 0.009 | 0.843 ± 0.030 | 0.708 ± 0.040 | 0.804 ± 0.012 | 0.754 ± 0.030 |
 | trained on masked | ResNet18 (ImageNet) | cell only | 3 | 0.769 ± 0.004 | 0.754 ± 0.005 | 0.864 ± 0.016 | 0.673 ± 0.022 | 0.807 ± 0.032 | 0.673 ± 0.019 |
 | trained on masked | ResNet18 (ImageNet) | background only | 1 | 0.610 | 0.641 | 0.791 | 0.632 | 0.693 | 0.449 |

@@ -23,3 +23,16 @@ Median per class (training cells):
 | rf | bg level + spread | 0.309 | 0.318 | 0.46 | 0.25 | 0.48 | 0.08 |
 | rf | area + bg level | 0.54 | 0.561 | 0.77 | 0.53 | 0.64 | 0.31 |
 | rf | area + bg level + spread | 0.554 | 0.557 | 0.81 | 0.56 | 0.7 | 0.16 |
+| rf | radial BF (outside disc + mask) | 0.326 | 0.337 | 0.53 | 0.22 | 0.49 | 0.11 |
+| rf | radial DF (outside disc + mask) | 0.314 | 0.316 | 0.52 | 0.27 | 0.43 | 0.05 |
+| rf | radial BF + DF (outside disc + mask) | 0.332 | 0.338 | 0.54 | 0.24 | 0.53 | 0.04 |
+| rf | radial BF + DF, rings > 28 px only (outside disc + mask) | 0.325 | 0.33 | 0.52 | 0.25 | 0.51 | 0.04 |
+
+Median DF ring mean outside disc + mask, per class (training cells):
+
+| cls | DF mean r22-25 | DF mean r25-28 | DF mean r28-31 | DF mean r31-34 | DF mean r34-99 |
+|---|---|---|---|---|---|
+| G1 | 44.7 | 44.7 | 44.6 | 44.6 | 44.4 |
+| S | 36.9 | 36.9 | 36.9 | 36.9 | 36.7 |
+| G2 | 32.3 | 32.2 | 32.2 | 32.1 | 31.9 |
+| Mitosis | 32.7 | 32.5 | 32.5 | 32.3 | 32.2 |

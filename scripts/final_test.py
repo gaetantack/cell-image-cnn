@@ -22,7 +22,8 @@ ROC-AUC and PR-AUC per class + macro (src.evaluate.ranking_metrics), and inferen
 (CPU, after one warm-up batch, data already in memory).
 
 Outputs (<split> = val or test):
-- results/table_<split>_summary.md (+ .csv): mean +- SD over seeds, same layout as table_val_summary_run2.md
+- results/table_test_summary.md (test) or results/table_val_summary_finaltest.md (val; table_val_summary.md is
+  the run-1 table of make_results_table.py) + results/table_<split>_summary_per_run.csv: mean +- SD over seeds, same layout as table_val_summary_run2.md
   plus ROC-AUC/PR-AUC/inference-time columns and a per-class PR-AUC table with the prevalence row.
 - results/preds/finaltest_<split>/<run_id>.npz: y_true, y_pred, proba, rows (for confusion matrices).
 - val: one row per model and seed appended to results/experiments.csv (eval_split val, run tag
@@ -192,7 +193,8 @@ def main(args):
     else:
         check_against_log(df)
     md = to_markdown(df, split)
-    (config.RESULTS_DIR / f"table_{split}_summary.md").write_text(md)
+    # val: "_finaltest" suffix, because results/table_val_summary.md is the run-1 table of make_results_table.py
+    (config.RESULTS_DIR / f"table_{split}_summary{'_finaltest' if split == 'val' else ''}.md").write_text(md)
     print(md)
 
 

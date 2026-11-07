@@ -211,7 +211,10 @@ def check_against_log(df):
         rows.append({"model": r["model"], "n_classes": r["n_classes"], "seed": r["seed"],
                      "source_run_id": r["source_run_id"] if isinstance(r["source_run_id"], str) else "(dummy row, no run_id)",
                      "macro_f1_logged": logged, "macro_f1_now": round(r["macro_f1"], 4),
-                     "match_3dp": round(logged, 3) == round(r["macro_f1"], 3)})
+                     # "matches to 3 decimals" = differs by less than 0.0005 (rounding both to 3 decimals
+                     # can split values such as 0.7385 vs 0.73848 across 0.738 / 0.739)
+                     "abs_diff": round(abs(logged - r["macro_f1"]), 5),
+                     "match_3dp": abs(logged - r["macro_f1"]) < 5e-4})
     check = pd.DataFrame(rows)
     check.to_csv(config.RESULTS_DIR / "final_test_val_check.csv", index=False)
     print(check.to_string(index=False))
@@ -253,8 +256,8 @@ def to_markdown(df, split):
         lines.append("")
     rf = df[df["model"] == "random_forest"]
     if len(rf):
-        lines += [f"Random forest mtry: max_features {rf['mtry'].iloc[0]} of {rf['n_features'].iloc[0]} features "
-                  f"per split (sklearn default sqrt would be {int(np.sqrt(rf['n_features'].iloc[0]))}).", ""]
+        lines += [f"Random forest mtry: max_features {int(rf['mtry'].iloc[0])} of {int(rf['n_features'].iloc[0])} features "
+                  f"per split (sklearn default sqrt would be {np.sqrt(rf['n_features'].iloc[0]):.1f}).", ""]
     return "\n".join(lines)
 
 

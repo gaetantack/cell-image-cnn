@@ -7,6 +7,10 @@ apply_mask(X, masks, mode, fill):
 - "original":        images unchanged
 - "cell_only":       every pixel OUTSIDE the dilated mask is set to `fill` (the cell on a flat grey)
 - "background_only": every pixel INSIDE the dilated mask is set to `fill` (the cell replaced by grey)
+- "background_only_disc": every pixel inside a FIXED central disc (radius config.MASK_DISC_RADIUS_PX) OR inside the
+                     dilated mask is set to `fill`. Added after "background_only" scored far above chance: there the
+                     filled hole has the cell's own size and shape, so the network can read the cell size from it.
+                     With the disc, the hole looks the same for 99.5% of cells (only cells reaching beyond it differ).
 `fill` is one constant per channel, the same for every cell: the median background pixel (outside the
 masks) over all TRAINING cells. Because it is the same for every cell, the phase-dependent background
 level of the darkfield channel (PROJECT.md observations) is removed in cell_only images.
@@ -26,6 +30,13 @@ def dilated_cell_mask(bf, px=config.MASK_DILATION_PX):
         return mask
     yy, xx = np.mgrid[-px:px + 1, -px:px + 1]
     return ndi.binary_dilation(mask, structure=(yy ** 2 + xx ** 2) <= px ** 2)
+
+
+def central_disc(size, radius):
+    """Boolean (size, size) disc of the given radius around the image centre."""
+    yy, xx = np.mgrid[0:size, 0:size]
+    centre = (size - 1) / 2
+    return np.hypot(yy - centre, xx - centre) <= radius
 
 
 def background_fill(X, masks, train_pos):
@@ -51,7 +62,12 @@ def apply_mask(X, masks, mode, fill):
         return X
     if masks.shape != (X.shape[0], X.shape[2], X.shape[3]):
         raise ValueError("one mask per image is needed")
-    replace = ~masks if mode == "cell_only" else masks  # pixels that are set to the fill value
+    if mode == "cell_only":
+        replace = ~masks  # pixels that are set to the fill value
+    elif mode == "background_only":
+        replace = masks
+    else:  # background_only_disc: fixed central disc united with each cell's own mask
+        replace = masks | central_disc(X.shape[2], config.MASK_DISC_RADIUS_PX)[None]
     out = X.copy()
     for c in range(X.shape[1]):
         channel = out[:, c]  # a view, so this writes into `out`

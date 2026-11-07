@@ -124,4 +124,8 @@ UMAP_SEED = 0
 RUN4_TAG = "n4_"
 MASK_DILATION_PX = 3  # cell masks are dilated by this many pixels (blurry cells are under-segmented)
 MASKS_FILE = PROCESSED_DIR / "masks_trainval_dil3.npz"  # cached dilated masks, TRAIN + VAL rows only
-MASK_MODES = ("original", "cell_only", "background_only")
+MASK_MODES = ("original", "cell_only", "background_only", "background_only_disc")
+# background_only_disc (added in run 4 after the suspicion check): fill a FIXED central disc of this radius together
+# with the cell mask, so the size of the filled hole is the same for (almost) every cell and no longer tells the
+# cell size. 22 px = smallest whole radius that contains >= 99% of the dilated TRAINING masks (99.5%; disc = 35% of image).
+MASK_DISC_RADIUS_PX = 22

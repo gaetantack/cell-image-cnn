@@ -73,3 +73,21 @@ def test_shuffle_labels_keeps_class_counts():
     assert np.array_equal(np.bincount(perm), np.bincount(y)) and not np.array_equal(perm, y)
     assert parse_args(["--model", "smallcnn", "--shuffle-labels"]).shuffle_labels
     assert parse_args(["--model", "smallcnn"]).mask_mode == "original"  # default changes nothing
+
+
+def test_background_only_disc_hides_cell_size():
+    from src import config
+    from src.masking import central_disc
+    n, size = 3, 66
+    X = rng.integers(0, 256, size=(n, 2, size, size), dtype=np.uint8)
+    masks = np.zeros((n, size, size), bool)
+    masks[0, 30:36, 30:36] = True  # small cell
+    masks[1, 20:46, 20:46] = True  # large cell, still inside the disc
+    masks[2, 0:5, 0:5] = True  # object outside the disc is filled too
+    out = apply_mask(X, masks, "background_only_disc", np.array([7, 9], np.uint8))
+    disc = central_disc(size, config.MASK_DISC_RADIUS_PX)
+    filled = (out[:, 0] == 7) & (out[:, 1] == 9)
+    assert filled[0][disc].all() and filled[1][disc].all()  # same hole for the small and the large cell
+    assert filled[2][masks[2]].all()
+    keep = ~(disc[None] | masks)[:, None].repeat(2, axis=1)
+    assert np.array_equal(out[keep], X[keep])  # nothing outside disc + mask changes

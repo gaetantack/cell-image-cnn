@@ -234,7 +234,7 @@ def to_markdown(df, split):
                   f"| Model | Seeds | Macro-F1 ({split}) | Balanced acc. ({split}) | "
                   + " | ".join(f"Recall {c}" for c in classes)
                   + " | ROC-AUC macro | PR-AUC macro | Inference (s/1,000 cells) | Accuracy | OOB accuracy |",
-                  "|---" * (10 + len(classes)) + "|"]
+                  "|---" * (9 + len(classes)) + "|"]
         for model, g in sub.groupby("model", sort=False):
             cell = lambda col, d=3: fmt(*mean_sd(g[col]), d) if col in g and g[col].notna().all() else "—"
             lines.append(f"| {MODEL_LABELS.get(model, model)} | {len(g)} | {cell('macro_f1')} | "

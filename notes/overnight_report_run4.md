@@ -1,4 +1,4 @@
-# Overnight report, run 4: 7 Nov 2026, 00:21 → 0X:XX (Claude, autonomous)
+# Overnight report, run 4: 7 Nov 2026, 00:21 → 05:00 (Claude, autonomous)
 
 Branch `overnight-run-4` (from `overnight-run-2`; pushed, not merged). **Every number is a VALIDATION number.** The test split was never loaded: `final_test.py` ran on val only, and its `--split test` refusal is tested. Ch4 was never used. New runs are tagged `n4_`; existing rows of `results/experiments.csv` are unchanged (checked before every commit: only added lines). Timeline: `notes/overnight_log_4.md`.
 
@@ -9,7 +9,7 @@ Branch `overnight-run-4` (from `overnight-run-2`; pushed, not merged). **Every n
 | 1 Start-up, clock-time queue guard (`queue_common.sh`), time budget | done |
 | 2 Masks (`make_masks.py`), `src/masking.py`, tests, `figures/masking_examples_val` | done |
 | 3a Inference-only masking check, 9 models | done |
-| 3b Training queue (SmallCNN cell/bg × 3 seeds, ResNet18-pre cell × 3, bg × 1) | done; plus ResNet bg-only seeds 1–2 (extra) |
+| 3b Training queue (SmallCNN cell/bg × 3 seeds, ResNet18-pre cell × 3, bg × 1) | done; plus ResNet bg-only seeds 1–2 and ResNet disc control (extra) |
 | 3c `results/masking_val.md`, `figures/masking_val` | done |
 | 3d Border check seeds 0–2 | done |
 | 4 `final_test.py` (+ ROC/PR-AUC, OOB, mtry, inference time), val check, refusal test, test-day checklist, PROJECT.md §7a draft | done |
@@ -23,15 +23,15 @@ Branch `overnight-run-4` (from `overnight-run-2`; pushed, not merged). **Every n
 |---|---|---|
 | Original (run-2 finals) | 0.744 ± 0.010 (3) | 0.781 ± 0.007 (3) |
 | **Cell only, trained on it** | **0.729 ± 0.019 (3)** | **0.769 ± 0.004 (3)** |
-| **Background only, trained on it** | **0.558 ± 0.028 (3)** | RESNET_BG |
-| Background only + fixed disc (size hidden), trained on it | 0.450 ± 0.007 (3) | RESNET_DISC |
+| **Background only, trained on it** | **0.558 ± 0.028 (3)** | **0.601 ± 0.007 (3)** |
+| Background only + fixed disc (size hidden), trained on it | 0.450 ± 0.007 (3) | 0.468 ± 0.003 (3) |
 | Cell only, evaluated only (run-2 model) | 0.420 ± 0.027 (3) | 0.156 ± 0.031 (3) |
 | Background only, evaluated only | 0.160 ± 0.003 (3) | 0.258 ± 0.026 (3) |
 | References: chance stratified 0.257 · mask area alone (logistic regr.) 0.483 · area + background level (RF) 0.554 · background level alone 0.27–0.31 · label shuffle (SmallCNN) 0.282 ± 0.020 | | |
 
 **Answers.**
 - *Does the score hold on cell only?* Yes, almost: −0.016 (SmallCNN) and −0.012 (ResNet18), about one to two seed SDs. Mitosis recall drops more for SmallCNN (0.63 → 0.54).
-- *How far above chance is background only, and for which class?* Far: 0.56–0.61 vs 0.257, with all classes well above chance (SmallCNN recall G1 0.83, S 0.55, G2 0.58, mitosis 0.45 ± 0.22). Mostly explained by the **size of the filled hole** (mask area alone 0.483; mitosis recall 0.59, the same as the background-only SmallCNN). With the size hidden by a fixed disc it is still 0.450 ± 0.007 (mitosis 0.39).
+- *How far above chance is background only, and for which class?* Far: 0.558 ± 0.028 (SmallCNN) and 0.601 ± 0.007 (ResNet18) vs 0.257, with all classes well above chance (SmallCNN recall G1 0.83, S 0.55, G2 0.58, mitosis 0.45 ± 0.22). Mostly explained by the **size of the filled hole** (mask area alone 0.483; mitosis recall 0.59, the same as the background-only SmallCNN). With the size hidden by a fixed disc it is still 0.450 ± 0.007 (SmallCNN; mitosis 0.39) and 0.468 ± 0.003 (ResNet18; mitosis 0.19).
 - *Do trained-on-masked and inference-only agree?* No. Inference-only collapses (cell-only 0.16–0.46) because a flat grey surround is out of distribution; the models predict mostly G2/mitosis. Inference-only masking alone would have wrongly suggested that the networks need the background.
 - *Border ring (3 seeds):* other-class minus same-class ring swap: 0.000 ± 0.005 / −0.002 ± 0.010 / +0.003 ± 0.002. The 8-px ring carries no phase-specific information the networks use, consistent with cell-only ≈ original. Masking shows something the ring test could not: the background *as a whole* (level and scaling) carries phase information.
 
@@ -47,8 +47,8 @@ Branch `overnight-run-4` (from `overnight-run-2`; pushed, not merged). **Every n
 ## Decisions I made for you (to confirm; also in PROJECT.md, dated 2026-11-07)
 | # | Decision | Why | Undo |
 |---|---|---|---|
-| 1 | Fixed-disc control (`background_only_disc`, r = 22 px), SmallCNN 3 seeds + ResNet18 seed 0 | Background-only was confounded by cell size | Delete `n4_bgdisc` rows; mode stays harmless |
-| 2 | Extra queue 4c: ResNet18 bg-only seeds 1–2 | Idle GPU; prompt allowed only s0 → single-seed row | Delete those rows |
+| 1 | Fixed-disc control (`background_only_disc`, r = 22 px), SmallCNN and ResNet18, 3 seeds each | Background-only was confounded by cell size | Delete `n4_bgdisc` rows; mode stays harmless |
+| 2 | Extra queues 4c/4d: ResNet18 bg-only seeds 1–2, ResNet18 disc seeds 0–2 | Idle GPU 03:25–04:58; prompt allowed only bg-only s0 → single-seed row | Delete those rows |
 | 3 | Chance ROC/PR-AUC = class prior as score (AUC 0.5, PR-AUC = prevalence) | Prompt asked for prevalence; DummyClassifier one-hot probabilities give arbitrary AUCs | `eval_dummy` in `final_test.py` |
 | 4 | Extra metrics stored in the settings JSON of appended rows, not as new CSV columns | Never rewrite experiments.csv | — |
 | 5 | final_test refuses a second test run if `results/test_results.csv` exists; test rows go there (experiments.csv refuses test) | "Test once" | — |
@@ -59,7 +59,7 @@ Branch `overnight-run-4` (from `overnight-run-2`; pushed, not merged). **Every n
 ## What you need to decide (max 3)
 1. **RQ5 message.** The cell alone is sufficient (cell-only ≈ original), but the background carries phase information (fixed-disc background-only 0.45), apparently through a phase-dependent darkfield scaling. Keep the run-2 take-home "no sign of a background shortcut" (draft has a NOTE), or rephrase it as "the networks do not need the background, but the background is not free of phase information"? Optionally check the BBBC048 docs for the per-image scaling.
 2. **Confirm PROJECT.md §7a (frozen configuration)** and the test-day procedure (`notes/test_day_checklist.md`) before 14 Nov.
-3. **Masking in the paper:** main text (Fig 6b) with the disc control, or Supplementary? It is Tier 3 in the plan but now has 3 seeds for the main rows.
+3. **Masking in the paper:** main text (Fig 6b) with the disc control, or Supplementary? It is Tier 3 in the plan but now has 3 seeds in every row.
 
 ## Resume / reproduce
 ```bash
@@ -68,6 +68,7 @@ python -m scripts.make_masks                      # masks cache (gitignored)
 nohup bash scripts/queue_run4.sh  > logs/queue_run4.out  2>&1 &   # skips finished runs; 06:30 guard (QUEUE_DEADLINE="YYYY-MM-DD HH:MM" for daytime)
 nohup bash scripts/queue_run4b.sh > logs/queue_run4b.out 2>&1 &
 nohup bash scripts/queue_run4c.sh > logs/queue_run4c.out 2>&1 &
+nohup bash scripts/queue_run4d.sh > logs/queue_run4d.out 2>&1 &
 python -m scripts.masking_check && python -m scripts.masking_summary && python -m scripts.bgonly_investigation
 python -m scripts.border_check --tag n2_final --suffix _run2 --seeds 0 1 2
 python -m scripts.final_test --split val && python -m scripts.fig_final --split val
@@ -77,7 +78,7 @@ python -m scripts.fig_gradcam --tag n2_final --suffix _run2 --device cpu --corre
 ```
 
 ## AI-use log notes
-- Claude (Opus 5.5, Claude Code) worked autonomously 00:21–0X:XX on 7 Nov on branch `overnight-run-4`, following the overnight prompt, CLAUDE.md and PROJECT.md.
+- Claude (Opus 5.5, Claude Code) worked autonomously 00:21–05:00 on 7 Nov on branch `overnight-run-4`, following the overnight prompt, CLAUDE.md and PROJECT.md.
 - Claude wrote all new code (masking module + tests, queues 4/4b/4c, final_test.py + tests, ranking metrics + tests, figure/table scripts, investigation scripts), ran all experiments, and wrote the drafts, LEARN.md entries, PROJECT.md entries and this report.
 - No literature was looked up; [CHECK] placeholders remain (Eulenberg 2017 row, BBBC048 per-image scaling).
 - Every interpretation needs your check before it goes into the paper.

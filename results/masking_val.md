@@ -11,7 +11,7 @@ Mask = brightfield cell mask (`src.features.cell_mask`) dilated by 3 px; fill = 
 | original | ResNet18 (ImageNet) | original | 3 | 0.781 ± 0.007 | 0.777 ± 0.009 | 0.843 ± 0.030 | 0.708 ± 0.040 | 0.804 ± 0.012 | 0.754 ± 0.030 |
 | trained on masked | ResNet18 (ImageNet) | cell only | 3 | 0.769 ± 0.004 | 0.754 ± 0.005 | 0.864 ± 0.016 | 0.673 ± 0.022 | 0.807 ± 0.032 | 0.673 ± 0.019 |
 | trained on masked | ResNet18 (ImageNet) | background only | 3 | 0.601 ± 0.007 | 0.621 ± 0.028 | 0.777 ± 0.036 | 0.615 ± 0.056 | 0.714 ± 0.029 | 0.380 ± 0.144 |
-| trained on masked | ResNet18 (ImageNet) | background only, fixed disc | 1 | 0.469 | 0.480 | 0.716 | 0.422 | 0.587 | 0.196 |
+| trained on masked | ResNet18 (ImageNet) | background only, fixed disc | 3 | 0.468 ± 0.003 | 0.478 ± 0.006 | 0.723 ± 0.023 | 0.422 ± 0.019 | 0.577 ± 0.056 | 0.190 ± 0.011 |
 | evaluated on masked | SmallCNN | cell only | 3 | 0.420 ± 0.027 | 0.521 ± 0.018 | 0.363 ± 0.036 | 0.287 ± 0.046 | 0.869 ± 0.007 | 0.567 ± 0.051 |
 | evaluated on masked | SmallCNN | background only | 3 | 0.160 ± 0.003 | 0.249 ± 0.001 | 0.979 ± 0.003 | 0.008 ± 0.002 | 0.005 ± 0.002 | 0.003 ± 0.005 |
 | evaluated on masked | ResNet18 (ImageNet) | cell only | 3 | 0.156 ± 0.031 | 0.323 ± 0.015 | 0.041 ± 0.043 | 0.026 ± 0.021 | 0.673 ± 0.033 | 0.551 ± 0.025 |

@@ -65,6 +65,8 @@ In UMAPs of the CNN embeddings of the validation cells (seed-0 runs; Fig. umap_v
 
 The first principal component (PC1, fitted on training cells) served as a simple pseudotime. Its Spearman correlation with phase order (G1 = 0 … telophase = 6) on validation cells was 0.45 for the hand-crafted features, 0.85 for the SmallCNN embedding and 0.85 for the pretrained ResNet18 embedding (Fig. pseudotime_val_run2; `results/pseudotime_val_run2.csv`). Part of this is expected by construction, because the networks were trained to separate G1, S, G2 and mitosis. Correlations with the 4-class order are identical to three decimals, since only 16 validation cells are in metaphase, anaphase or telophase.
 
+*Class separation (run 4; `scripts/silhouette.py`, `results/silhouette_val.md`).* The silhouette score of the true 4-class labels, computed on the high-dimensional vectors (not on the UMAP coordinates, which distort distances), was 0.006 for the 28 standardised hand-crafted features, 0.150 ± 0.003 for the SmallCNN embedding and 0.164 ± 0.017 for the pretrained ResNet18 embedding (validation cells, seeds 0–2). All values are low because neighbouring phases form a continuum rather than separate clusters; the classes overlap almost completely in the hand-crafted space, although a random forest still separates them reasonably (macro-F1 0.632), since it can weight a few informative features while Euclidean distance weights all 28 equally.
+
 *Take-home (Fig. umap_val_run2):* the CNN embeddings order cells along the cell cycle, though they were only trained on discrete classes.
 
 ## RQ5 — Does the network look at the cell?

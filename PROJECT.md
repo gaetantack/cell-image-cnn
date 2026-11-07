@@ -65,7 +65,7 @@ Drafted overnight 2026-11-07 by Claude (run 4). The plan requires this to be fix
 | ResNet18 (ImageNet) | Checkpoints `resnet18_pretrained_c4_n2_final_s{0,1,2}` | as SmallCNN; 66 → 128 px, conv1 = mean of RGB filters | same |
 | ResNet18 (scratch) | Checkpoints `resnet18_scratch_c4_n2_final_s{0,1,2}` | as SmallCNN; 66 → 128 px | same |
 
-Not evaluated on test: tuning runs, Phase A runs, learning-curve runs, masked (`n4_`) runs, 7-class ResNets (dropped). Metrics: macro-F1 (primary), balanced accuracy, per-class recall, confusion matrices, one-vs-rest ROC-AUC and PR-AUC (mitosis PR-AUC next to its prevalence), inference time per 1,000 cells. Reported as mean ± SD over seeds 0–2. The val dress rehearsal (`results/table_val_summary.md`, `results/final_test_val_check.csv`) reproduces every logged val macro-F1. **Status: to confirm by user.**
+Not evaluated on test: tuning runs, Phase A runs, learning-curve runs, masked (`n4_`) runs, 7-class ResNets (dropped). Metrics: macro-F1 (primary), balanced accuracy, per-class recall, confusion matrices, one-vs-rest ROC-AUC and PR-AUC (mitosis PR-AUC next to its prevalence), inference time per 1,000 cells. Reported as mean ± SD over seeds 0–2. The val dress rehearsal (`results/table_val_summary_finaltest.md`, `results/final_test_val_check.csv`) reproduces every logged val macro-F1. **Status: to confirm by user.**
 
 ## 8. Decisions log
 | Date | Decision | Reason |

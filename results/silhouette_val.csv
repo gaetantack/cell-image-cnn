@@ -1,0 +1,8 @@
+space,seed,dim,silhouette
+"hand-crafted features (28, standardised)",-,28,0.005860390109235821
+SmallCNN embedding,0,256,0.15361005067825317
+SmallCNN embedding,1,256,0.14941023290157318
+SmallCNN embedding,2,256,0.1478048712015152
+ResNet18 (ImageNet) embedding,0,512,0.15227888524532318
+ResNet18 (ImageNet) embedding,1,512,0.1840234398841858
+ResNet18 (ImageNet) embedding,2,512,0.15706411004066467

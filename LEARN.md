@@ -20,6 +20,11 @@ Evaluates the frozen models exactly as the plan says (CNN checkpoints `n2_final`
 ### Label-shuffle control (`src.train --shuffle-labels`, tag `n4_shuffled`)
 The training labels are randomly permuted (same class counts), the validation labels stay true. A network can then only memorise noise, so its val score should be at chance. If it were clearly above chance, information would leak from somewhere other than the image–label relation (e.g. the split or the normalisation).
 
+### `scripts/silhouette.py` — how separate are the classes in a feature space? (RQ4)
+For one cell: **a** = its mean (Euclidean) distance to the other cells of its own class, **b** = its mean distance to the cells of the *nearest other* class. **s = (b − a) / max(a, b)**, from −1 (closer to another class than to its own) through 0 (on the border) to +1 (deep inside its own class). The silhouette score is the mean s over all val cells, here with the true 4-class labels.
+- **Why on the embedding, not on UMAP:** UMAP keeps local neighbourhoods but stretches and shrinks distances freely, so cluster gaps in a UMAP plot are not real distances. The silhouette needs real distances, so it is computed on the 28 features or the 256/512-D embeddings.
+- **Results (val):** hand-crafted 0.006, SmallCNN 0.150 ± 0.003, ResNet18 (ImageNet) 0.164 ± 0.017. Low everywhere because the phases are a continuum. The hand-crafted value is near 0 although the forest reaches 0.63: Euclidean distance weights all 28 standardised features equally, also the uninformative ones; a forest picks the useful ones.
+
 ### Examiner questions, run 4
 <details>
 <summary>2 questions with model answers</summary>

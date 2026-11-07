@@ -1,6 +1,6 @@
 # Overnight report, run 2: 31 Oct → 1 Nov 2026 (Claude, autonomous)
 
-Branch `overnight-run-2` (from `overnight-2026-10-25`; pushed, not merged). Every number here is a **VALIDATION** number. The test split was never loaded. All run-2 runs have run tags starting with `n2_`, and the run-1 rows in `results/experiments.csv` are byte-identical to before (checked). Timeline: `notes/overnight_log_2.md`.
+Branch `overnight-run-2` (from `overnight-2026-10-25`; pushed, not merged). Every number here is a **VALIDATION** number. The test split was never loaded. All run-2 runs have run tags starting with `n2_`, and the run-1 rows in `results/experiments.csv` are byte-identical to before (checked). Timeline: `notes/overnight_runs/overnight_log_2.md`.
 
 ## Done / not done
 

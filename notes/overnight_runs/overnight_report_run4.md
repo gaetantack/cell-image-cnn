@@ -1,6 +1,6 @@
 # Overnight report, run 4: 7 Nov 2026, 00:21 → 05:00 (Claude, autonomous)
 
-Branch `overnight-run-4` (from `overnight-run-2`; pushed, not merged). **Every number is a VALIDATION number.** The test split was never loaded: `final_test.py` ran on val only, and its `--split test` refusal is tested. Ch4 was never used. New runs are tagged `n4_`; existing rows of `results/experiments.csv` are unchanged (checked before every commit: only added lines). Timeline: `notes/overnight_log_4.md`.
+Branch `overnight-run-4` (from `overnight-run-2`; pushed, not merged). **Every number is a VALIDATION number.** The test split was never loaded: `final_test.py` ran on val only, and its `--split test` refusal is tested. Ch4 was never used. New runs are tagged `n4_`; existing rows of `results/experiments.csv` are unchanged (checked before every commit: only added lines). Timeline: `notes/overnight_runs/overnight_log_4.md`.
 
 ## Done / not done
 

@@ -1,6 +1,6 @@
 # Overnight report — 25/26 October 2026 (Claude, autonomous run)
 
-Branch `overnight-2026-10-25` (pushed to origin; not merged). Every number here is a **VALIDATION** number. The test split was never loaded. Detailed time line: `notes/overnight_log.md`.
+Branch `overnight-2026-10-25` (pushed to origin; not merged). Every number here is a **VALIDATION** number. The test split was never loaded. Detailed time line: `notes/overnight_runs/overnight_log.md`.
 
 ## Done / not done
 

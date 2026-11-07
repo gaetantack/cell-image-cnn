@@ -1,4 +1,4 @@
-# Test-day checklist (14 Nov 2026): the ONE test run
+# Test-day checklist (7 Nov 2026): the ONE test run
 
 Drafted overnight 2026-11-07 by Claude (run 4). Read it fully before starting. The test split is evaluated **once**; nothing is re-run, re-tuned or re-selected afterwards, whatever the numbers are.
 
@@ -12,12 +12,12 @@ Drafted overnight 2026-11-07 by Claude (run 4). Read it fully before starting. T
 ## The run (exact commands)
 ```bash
 conda activate cell-image-cnn
-cd ~/Documents/cell-image-cnn
+# cd into the repository folder
 git status && pytest -q
 git log -1 --format=%H > results/test_code_commit.txt   # the code version that produced the test numbers
 python -m scripts.final_test --split test --i-understand-this-is-the-one-test-run 2>&1 | tee logs/final_test_test.out
 git add results/preds/finaltest_test results/test_results.csv results/table_test_summary.md results/table_test_summary_per_run.csv results/test_code_commit.txt
-git commit -m "Final test: one run on the test split (14 Nov)"
+git commit -m "Final test: one run on the test split (7 Nov)"
 git tag test-frozen
 git push origin HEAD --tags
 ```

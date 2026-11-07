@@ -108,6 +108,7 @@ Not evaluated on test: tuning runs, Phase A runs, learning-curve runs, masked (`
 | 2026-11-07 | RQ5 message rephrased: The networks do not need the background (cell only ≈ full image: SmallCNN 0.729 vs 0.744, ResNet18 0.769 vs 0.781, val), but in this dataset the background is not free of phase information: a network trained on the background alone, with the cell's size hidden by a fixed disc, still reaches 0.45–0.47 macro-F1 (chance 0.26), apparently through a phase-dependent scaling of the darkfield intensity. Origin of the darkfield scaling listed as a limitation [CHECK BBBC048 documentation] (user) | Masking results (`results/masking_val.md`) |
 | 2026-11-07 | §7a frozen configuration and `notes/test_day_checklist.md` confirmed (user) | Required before the test |
 | 2026-11-07 | Masking in the main text, small (Fig 6b, trained-on-input rows only); evaluate-only rows and the darkfield investigation in the Supplementary (user) | 3 seeds in every row; keeps the main text short |
+| 2026-11-07 | Final test run once (commit 55b75e1, tag test-frozen); results frozen 2026-11-08 (user) | Code version in `results/test_code_commit.txt` (bd0fea6); outputs `results/test_results.csv`, `results/table_test_summary.md`; never re-run |
 
 ## 9. Observations
 | Date | Observation | Relevance |

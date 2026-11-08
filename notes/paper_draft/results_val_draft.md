@@ -110,7 +110,7 @@ For the forest, adding the raw darkfield intensity levels, which track the backg
 - *Augmentation hardly matters.* All six augmentation × balancing settings were within 0.03 of each other; the chosen setting won a tie, not a clear contest.
 - *Early stopping on a noisy curve.* Models were early-stopped on validation macro-F1 with patience 6. The curve is noisy, especially for mitosis (107 validation cells), and some runs kept a very early epoch (best epochs 0–5), most often in the small learning-curve subsets (the 1% scratch ResNet18 runs fitted their 225 training cells within the first epoch). A smoothed or fixed-epoch selection was not tried, because it would require re-running all models.
 - *Validation used for selection.* All numbers in this draft are on the validation set that was also used for model selection and early stopping, so they are optimistic; the test set gives the final numbers.
-- *Seven classes.* The 7-class score depends on 6 anaphase/telophase validation cells, and was only run for the forest and SmallCNN.
+- *Seven classes.* In the 7-class model, metaphase and anaphase score 0: on the test set, neither the forest nor SmallCNN recognised a single metaphase (10 cells) or anaphase (2 cells) cell, for any seed. With about 48 metaphase and 11 anaphase cells for training, the models have too few examples to learn these phases, and with only 10 and 2 test cells, one cell more or less changes their recall by 0.1 or 0.5. These two zeros pull the 7-class macro-F1 down (test: forest 0.501, SmallCNN 0.514). This is why the four mitotic phases are merged in our main 4-class task, and why the 7-class task was run only for the forest and SmallCNN.
 
 ## Note: pilot run (run 1) → run 2
 

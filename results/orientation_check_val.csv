@@ -1,0 +1,13 @@
+run_id,images,macro_f1,recall_G1,recall_S,recall_G2,recall_Mitosis
+smallcnn_c4_abl_none_none_s0,original,0.742,0.887,0.612,0.831,0.57
+smallcnn_c4_abl_none_none_s0,rotate_90,0.643,0.766,0.559,0.895,0.299
+smallcnn_c4_abl_none_none_s0,rotate_180,0.58,0.738,0.585,0.896,0.093
+smallcnn_c4_abl_none_none_s0,rotate_270,0.633,0.845,0.585,0.853,0.178
+smallcnn_c4_abl_none_none_s0,flip_left_right,0.608,0.753,0.574,0.897,0.159
+smallcnn_c4_abl_none_none_s0,flip_up_down,0.71,0.87,0.613,0.833,0.467
+smallcnn_c4_final_s0,original,0.69,0.782,0.721,0.766,0.561
+smallcnn_c4_final_s0,rotate_90,0.69,0.799,0.705,0.746,0.598
+smallcnn_c4_final_s0,rotate_180,0.694,0.787,0.736,0.77,0.523
+smallcnn_c4_final_s0,rotate_270,0.681,0.801,0.709,0.729,0.589
+smallcnn_c4_final_s0,flip_left_right,0.692,0.785,0.728,0.769,0.523
+smallcnn_c4_final_s0,flip_up_down,0.698,0.783,0.73,0.76,0.598

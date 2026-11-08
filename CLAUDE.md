@@ -12,7 +12,8 @@ Read `PROJECT.md` first. It holds the goal, research questions, rigour rules, fi
 | `scripts/` | Entry points: training runs, feature extraction, and one script per figure/table. |
 | `tests/` | Unit tests for `src/` (pytest). |
 | `results/` | `experiments.csv`, saved metrics, predictions, logs. |
-| `figures/` | Figure files, written only by scripts in `scripts/`. |
+| `figures/` | Figure files, written only by scripts in `scripts/`. Paper + supplementary figures at the top level; run-1 pilot and early data checks in `figures/archive/` (moved there by hand on 2026-11-07, see README). |
+| `notes/` | `paper_draft/`, `test_day_checklist.md`, `brief.md`; overnight reports and logs in `notes/overnight_runs/`. |
 | `notebooks/` | Exploration only. Nothing the paper depends on lives only here. |
 
 ## Code rules

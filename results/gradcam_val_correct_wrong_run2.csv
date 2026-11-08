@@ -1,0 +1,9 @@
+class4,prediction,n_cells,heat_in_mask,mask_area_share,heat_in_border
+G1,correct,1861,0.329,0.108,0.103
+G1,wrong,289,0.387,0.124,0.077
+S,correct,876,0.397,0.132,0.097
+S,wrong,417,0.384,0.126,0.072
+G2,correct,1042,0.45,0.157,0.114
+G2,wrong,248,0.39,0.14,0.145
+Mitosis,correct,77,0.437,0.17,0.15
+Mitosis,wrong,30,0.45,0.16,0.143

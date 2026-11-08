@@ -1,0 +1,5 @@
+{
+  "augment": "vflip",
+  "balance": "weighted",
+  "reason": "best two vflip/weighted and vflip/oversample differ by 0.002 <= one seed SD 0.013; mitosis recall also within one SD (0.090 <= 0.101); tie-break prefers vflip/weighted (vflip > none > basic, then weighted > oversample)"
+}

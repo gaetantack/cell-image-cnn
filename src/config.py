@@ -60,3 +60,72 @@ SPLIT_SEED = 42
 SPLIT_FRACTIONS = (0.70, 0.15, 0.15)  # train, val, test
 SEEDS = (0, 1, 2)
 TUNING_BUDGET = 12
+
+# Random forest (scripts/run_rf.py). Missing features -> train-set median (see PROJECT.md decisions).
+RF_FEATURE_SET = "main"
+RF_N_ESTIMATORS = 500
+# 12 configurations = TUNING_BUDGET: max_features x min_samples_leaf x class_weight (max_depth unlimited;
+# min_samples_leaf limits tree size instead). Both class_weight options re-weight the rare classes.
+RF_GRID = [
+    {"max_features": mf, "min_samples_leaf": leaf, "class_weight": cw}
+    for mf in ("sqrt", 0.33) for leaf in (1, 5, 20) for cw in ("balanced", "balanced_subsample")
+]
+RF_PERMUTATION_REPEATS = 10
+RF_TOP_FEATURES = 15
+PREDS_DIR = RESULTS_DIR / "preds"  # val predictions per run, for confusion matrices
+
+# CNNs (src/models.py, src/train.py)
+SMALLCNN_CHANNELS = (32, 64, 128, 256)  # output channels of the 4 conv blocks
+SMALLCNN_DROPOUT = 0.3
+RESNET_INPUT_SIZE = 128  # 66 px images are upscaled (bilinear) to this before ResNet18
+CHECKPOINT_DIR = ROOT / "checkpoints"  # gitignored
+LOG_DIR = ROOT / "logs"  # gitignored
+EVAL_BATCH_SIZE = 512
+EARLY_STOP_PATIENCE = 6  # epochs without val macro-F1 improvement before stopping (5 in run 1; 6 from run 2)
+# Epoch caps (set by the overnight time budget, 2026-10-25; same for every CNN family)
+TUNE_EPOCHS = 4
+FINAL_EPOCHS = 12
+# Augmentation "vflip" (train only, added in run 2): random up-down flip + the same intensity jitter;
+# no rotations / left-right flips, because the darkfield image has a fixed left/right direction.
+# Augmentation "basic" (train only): random 90-degree rotation, horizontal/vertical flip, and per-image,
+# per-channel intensity jitter x * (1 + g) + b with g, b uniform in +-AUG_JITTER (in normalised units)
+AUG_JITTER = 0.1
+# CNN tuning grid: 12 configurations = TUNING_BUDGET, same grid for every family.
+# augment = basic and balance = weighted are fixed during tuning (their ablation is RQ3).
+CNN_GRID = [
+    {"lr": lr, "weight_decay": wd, "batch_size": bs}
+    for lr in (1e-4, 5e-4, 2e-3) for wd in (1e-4, 1e-2) for bs in (64, 128)
+]
+# Run 2 (overnight 2026-10-31, run tags start with "n2_"). Run-1 settings above are kept unchanged.
+RUN2_TAG = "n2_"
+RUN2_MAX_EPOCHS = 25  # Phase A and final runs: max epochs, early stopping (EARLY_STOP_PATIENCE) on val macro-F1
+RUN2_AUGMENTS = ("none", "vflip", "basic")  # Phase A: augmentation x balancing check, SmallCNN, seeds 0-2
+RUN2_BALANCES = ("weighted", "oversample")
+# Phase B grid: 12 configurations = TUNING_BUDGET, same for every family. lr extended above run 1's edge
+# (all families picked 2e-3 in run 1); batch size fixed at 64 (64 beat 128 in every pair in run 1).
+CNN_GRID_RUN2 = [
+    {"lr": lr, "weight_decay": wd, "batch_size": 64}
+    for lr in (5e-4, 1e-3, 2e-3, 3.5e-3, 5e-3, 1e-2) for wd in (1e-4, 1e-2)
+]
+# Choice of AUG*/BAL* after Phase A (written by scripts/choose_aug_bal.py, read by the run-2 queue)
+RUN2_CHOICE_FILE = RESULTS_DIR / "run2_aug_bal_choice.json"
+
+# Learning curve (RQ2): stratified fraction of the TRAIN split, seeded by the run seed
+LABEL_FRACTIONS = (0.01, 0.05, 0.2, 1.0)
+
+# Interpretation (src/interpret.py, scripts/fig_umap.py, scripts/fig_gradcam.py)
+GRADCAM_BORDER_PX = 8  # outer ring used to measure heat on the image border
+GRADCAM_CELLS_PER_CLASS = 4  # cells shown per class in the Grad-CAM grid
+UMAP_N_NEIGHBORS = 30
+UMAP_MIN_DIST = 0.3
+UMAP_SEED = 0
+
+# Run 4 (overnight 2026-11-06/07, run tags start with "n4_"): masking experiment (RQ5)
+RUN4_TAG = "n4_"
+MASK_DILATION_PX = 3  # cell masks are dilated by this many pixels (blurry cells are under-segmented)
+MASKS_FILE = PROCESSED_DIR / "masks_trainval_dil3.npz"  # cached dilated masks, TRAIN + VAL rows only
+MASK_MODES = ("original", "cell_only", "background_only", "background_only_disc")
+# background_only_disc (added in run 4 after the suspicion check): fill a FIXED central disc of this radius together
+# with the cell mask, so the size of the filled hole is the same for (almost) every cell and no longer tells the
+# cell size. 22 px = smallest whole radius that contains >= 99% of the dilated TRAINING masks (99.5%; disc = 35% of image).
+MASK_DISC_RADIUS_PX = 22

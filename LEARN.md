@@ -1,0 +1,192 @@
+# LEARN.md — what each file does and why (for the oral exam)
+
+## Added overnight 2026-11-06/07, run 4 (by Claude, check every point)
+
+### What a masking experiment can and cannot show (`src/masking.py`, `scripts/masking_check.py`, `scripts/queue_run4.sh`)
+**Idea.** If the network classifies cell-cycle phases, it should do well when it sees only the cell (*cell only*) and badly when it sees only the background (*background only*). The masks come from `src.features.cell_mask` on the brightfield image, dilated by 3 px.
+- **Why masks from brightfield:** brightfield shows the cell outline as a dark rim on a grey background, so a simple Otsu threshold finds it. In darkfield the cell interior is dark like the background, so the outline is hard to find. And fluorescence (Ch4) may never be used: it made the labels.
+- **Why dilate by 3 px:** blurry, out-of-focus cells are under-segmented (the mask catches only the bright core). Without dilation, part of the cell (its halo) would stay in the "background-only" image, and the background model would partly see the cell.
+- **Why one constant fill for every cell:** the darkfield background level depends on the phase (G1 brighter than metaphase, PROJECT.md observations). If each cell were filled with its own background level, the cell-only image would still carry that level, i.e. the shortcut we want to remove. One constant (the median training background: BF 94, DF 39) carries no class information. It comes from training cells only, so no val information leaks in.
+- **Why the background-only model is the control:** it tells how much is predictable *without* the cell. If it scores near chance, the background carries little class information; if it scores well above chance, something outside the cell (or leaking through the mask) predicts the phase.
+- **Two ways to run it, and why both:** (1) *inference only*: the normal model scored on masked images. A drop can mean "it needs the background" OR just "it has never seen flat grey surroundings" (distribution shift), so this alone cannot prove a shortcut. (2) *train on masked images*: if a model trained on cell-only images is almost as good as the original, the cell alone carries the information.
+- **What it cannot show:** (a) A mask is an image edit: the outline of the filled region still shows the cell's size and shape. A background-only model can therefore learn cell size from the "hole", so it is not purely background (we measure this with a mask-area-only logistic regression). (b) A good cell-only score does not prove that the original model *used* the cell; it shows that the cell is *sufficient*. (c) The mask is imperfect (missed rims, 1 empty mask), so a little cell can remain in background-only images.
+
+### `scripts/final_test.py` — the one test run, rehearsed on val
+Evaluates the frozen models exactly as the plan says (CNN checkpoints `n2_final`, RF re-fitted on train, chance baselines). `--split test` is refused unless the flag `--i-understand-this-is-the-one-test-run` is given (tested in `tests/test_final_test.py`), and it refuses a second test run if `results/test_results.csv` exists. On val it must reproduce every logged val macro-F1 (`results/final_test_val_check.csv`): this shows the reload path is right before the test is touched.
+- **ROC-AUC vs PR-AUC** (`src.evaluate.ranking_metrics`): both use the class probability as a score and ask "are cells of class k ranked above the others?" ROC-AUC (chance 0.5) is dominated by the many negatives, so a rare class can look good. PR-AUC (average precision; chance = prevalence, 0.022 for mitosis) asks how pure the top of the ranking is, which is what matters for finding rare mitotic cells.
+- **Out-of-bag (OOB) accuracy:** each tree is trained on a bootstrap sample (drawn with replacement), so about 37 % of training cells are not used by that tree. Scoring each training cell with only the trees that did not see it gives an almost free validation estimate. It should be close to val accuracy; a large gap would mean the val set differs from train or something leaks.
+- **mtry:** `max_features` 0.33 means 0.33 × 28 = 9 randomly chosen features are considered at each split (sklearn default for classification: √28 ≈ 5). More features per split = stronger but more similar trees.
+
+### Label-shuffle control (`src.train --shuffle-labels`, tag `n4_shuffled`)
+The training labels are randomly permuted (same class counts), the validation labels stay true. A network can then only memorise noise, so its val score should be at chance. If it were clearly above chance, information would leak from somewhere other than the image–label relation (e.g. the split or the normalisation).
+
+### `scripts/silhouette.py` — how separate are the classes in a feature space? (RQ4)
+For one cell: **a** = its mean (Euclidean) distance to the other cells of its own class, **b** = its mean distance to the cells of the *nearest other* class. **s = (b − a) / max(a, b)**, from −1 (closer to another class than to its own) through 0 (on the border) to +1 (deep inside its own class). The silhouette score is the mean s over all val cells, here with the true 4-class labels.
+- **Why on the embedding, not on UMAP:** UMAP keeps local neighbourhoods but stretches and shrinks distances freely, so cluster gaps in a UMAP plot are not real distances. The silhouette needs real distances, so it is computed on the 28 features or the 256/512-D embeddings.
+- **Results (val):** hand-crafted 0.006, SmallCNN 0.150 ± 0.003, ResNet18 (ImageNet) 0.164 ± 0.017. Low everywhere because the phases are a continuum. The hand-crafted value is near 0 although the forest reaches 0.63: Euclidean distance weights all 28 standardised features equally, also the uninformative ones; a forest picks the useful ones.
+
+### Examiner questions, run 4
+<details>
+<summary>2 questions with model answers</summary>
+
+**1. Your background-only model is above chance. Doesn't that prove a background shortcut?**
+Not by itself, and we took it apart in steps (val numbers). Background-only SmallCNN: 0.558 ± 0.028. But the filled hole shows the cell's size and shape, and the mask area alone already gives 0.483 (logistic regression). When a fixed disc hides the size too, the score falls to 0.450 ± 0.007, still well above chance (0.257) and above the shuffled-label null (0.282). What remains: the whole darkfield image of a cell is scaled by a per-image factor that differs by phase (background G1 45 vs G2 32 grey levels; the SD/median ratio is the same in every class), so the background pixels carry phase information. Simple background statistics explain ≈ 0.33 of it; the rest we could not pin down. Meanwhile, the cell-only networks lose only 0.01–0.02 against the originals, so the cell is sufficient. Honest answer: The networks do not need the background (cell only ≈ full image: SmallCNN 0.729 vs 0.744, ResNet18 0.769 vs 0.781, val), but in this dataset the background is not free of phase information: a network trained on the background alone, with the cell's size hidden by a fixed disc, still reaches 0.45–0.47 macro-F1 (chance 0.26), apparently through a phase-dependent scaling of the darkfield intensity. Where that per-image scaling comes from is unknown [CHECK BBBC048 documentation].
+
+**2. Why didn't you simply mask with each cell's own background median?**
+Because that level differs between phases in the darkfield channel (G1 ≈ 45 vs metaphase ≈ 24 grey levels). Filling with it would put the shortcut back into every cell-only image. One constant from the training cells removes it and cannot leak validation information.
+</details>
+
+## Added overnight 2026-10-31/11-01, run 2 (by Claude, check every point)
+
+### `src/train.py` — new augmentation option `vflip`
+`--augment vflip` flips each training image top ↔ bottom with probability 0.5 and applies the same small intensity jitter as `basic` (x · (1 + g) + b, g and b uniform in ±0.1). It never rotates and never flips left ↔ right. `none` and `basic` are unchanged. `tests/test_models.py::test_augment_vflip_never_flips_left_right` checks that every output is either the original or its up-down mirror, never the left-right mirror, and that a left-bright image stays left-bright.
+- **Why only up-down:** run 1 found that the darkfield image has a fixed left/right direction (left half brighter in 81% of training images). A left-right flip or a 90° rotation moves the bright side somewhere else, so the network can no longer use the direction. An up-down flip keeps left on the left. In run 1 the no-augmentation model lost little on up-down-flipped validation images (0.742 → 0.710) but a lot on left-right flips (→ 0.608).
+- **Why still augment at all:** flipping and jitter make the training set look bigger and less repetitive, which helps against overfitting, especially for the 500-odd mitotic training cells that the balancing shows again and again.
+- **How it is implemented:** `x.flip(2)` reverses dimension 2 of a (batch, channel, row, column) tensor, i.e. the rows → top and bottom swap. `x.flip(3)` would swap left and right. The random numbers come from the seeded generator, so a run is reproducible.
+
+### Early stopping with patience (`EARLY_STOP_PATIENCE = 6`, was 5)
+After each epoch, the run scores validation macro-F1 and keeps the weights of the best epoch so far. If 6 epochs in a row bring no new best, training stops and the best weights are used.
+- **Why patience and not "stop at the first drop":** val macro-F1 jumps up and down between epochs (in run 1 by up to 0.15 in one ResNet run). One bad epoch says little; 6 bad epochs in a row say the model has stopped improving.
+- **Why 25 epochs max now (12 in run 1):** two of the three run-1 scratch-ResNet finals had their best epoch at or near the last epoch, so 12 was a cap, not convergence. With 25 epochs and early stopping a run only takes longer if it keeps improving. The log records the best epoch and whether a run hit 25, to see whether 25 is still a cap.
+- **Interaction with the learning-rate schedule:** the cosine schedule is planned for the maximum number of epochs (25). A run that stops early never reaches the smallest learning rates. That is the same for every family, so the comparison stays fair.
+- **Price:** choosing the best epoch on validation makes validation numbers a little optimistic. The test set (week 5) gives the honest number.
+
+### Why the run-2 tuning grid was widened
+Run 1 tuned lr ∈ {1e-4, 5e-4, 2e-3}, and every family picked 2e-3, the edge of the grid. A best value at the edge means the real best may lie outside the grid. Run 2 uses lr ∈ {5e-4, 1e-3, 2e-3, 3.5e-3, 5e-3, 1e-2} × weight decay ∈ {1e-4, 1e-2}: still 12 configurations (the tuning budget) and the same grid for all families. Batch size is fixed at 64, because 64 beat 128 in every run-1 pair, so a batch-size axis would have wasted half the budget.
+- **Caveat to say in the oral:** tuning runs last only 4 epochs. With few epochs a high learning rate can look better simply because it gets further in the time given, even if a lower rate would win over 25 epochs. If a family again picks the top value (1e-2), we report it and do not extend further.
+
+### Why the darkfield direction matters (physics and biology)
+The darkfield (Ch6) image is side-scattered light. In an imaging flow cytometer the light that produces this image comes from a laser that hits the cell from the side, and the camera only collects light scattered towards it [CHECK: ImageStream optics, e.g. the instrument manual; not looked up]. A cell is lit from one side, so its scatter pattern, and also the background glow, is stronger on that side. Because the optics are the same for every cell, every image has the same "lit from the left" direction.
+- **Why it is real information, not leakage:** the direction is the same for all cells in training, validation and test; it is not linked to the label. What carries information is *how* a cell scatters light coming from one side: granularity, nucleus shape and condensed chromosomes change side scatter. Turning the image destroys the link between "lit side" and the pattern, so the network has to learn it for every direction from fewer examples.
+- **Limitation:** a model that uses the direction only works for images from an instrument with the same geometry. That is fine for this dataset but should be said in the paper.
+
+### `scripts/choose_aug_bal.py` — Phase A choice rule (RQ3)
+Summarises the 18 SmallCNN runs (augment none/vflip/basic × balance weighted/oversample × seeds 0–2) and picks AUG*/BAL* by a rule fixed before the runs: highest mean val macro-F1; if the best two are within one seed SD, higher mitosis recall; if that is also within one SD, vflip > none > basic, then weighted > oversample. Writes `results/run2_phaseA_val.md` and `results/run2_aug_bal_choice.json`; the queue reads the JSON.
+- **Why a fixed rule:** deciding the rule after seeing the numbers would let us pick what we like (a form of p-hacking).
+
+### Run-2 helper scripts
+- `scripts/fig_phaseA_run2.py`: Phase A figure. Macro-F1 and mitosis recall per setting, mean ± SD with single seeds as small marks. Shape (filled circle / open square) shows the balancing, so the figure also works in grey-scale.
+- `scripts/compare_runs.py`: run 1 vs run 2 per CNN family (config, macro-F1, mitosis recall, best epoch, epochs run) → `results/table_run1_vs_run2_val.md`.
+- `--tag` / `--suffix` options (`make_results_table`, `fig_model_comparison`, `fig_confusion`, `fig_umap`, `pseudotime`, `fig_gradcam`, `border_check`; `fig_learning_curve` uses `--prefix`): choose the CNN runs by run tag (run 1 `final`, run 2 `n2_final`) and keep both versions of every table and figure. The random forest rows are always the run-1 ones, because the forest did not change.
+- `scripts/queue_run2_A.sh`, `queue_run2_BC.sh`, `queue_run2_CE.sh`, `queue_run2_lc_pretrained.sh`: the night's job queues. Each run is skipped if its run_id is already in the log, so a queue can be restarted at any time. `CE` starts an "item" (3 seeds or 3 label fractions of one family) only if all of it should end before 06:30.
+- **Why one run tag per night:** the log is append-only, so run 1 and run 2 sit side by side in one file and are told apart only by the `n2_` prefix of the run_id.
+
+### Examiner questions, run 2 (practice for the closed-book oral)
+<details>
+<summary>3 new questions with model answers</summary>
+
+**1. You chose up-down flips over no augmentation although the means differ by only 0.006. Isn't that arbitrary?**
+The choice followed a rule written down before the runs: highest mean val macro-F1, and if the best two were within one seed SD, mitosis recall, then a fixed preference. The best two (vflip + weighted 0.743 ± 0.013 and vflip + oversampling 0.741 ± 0.010) were a tie, so the preference decided. The honest statement is that the setting matters less than run 1 suggested: all six settings lie within 0.03, and seeds move a result by 0.01–0.05. What vflip + weighted does have is the most stable mitosis recall (0.66 ± 0.01).
+
+**2. If the darkfield direction comes from the instrument, isn't the CNN learning an artefact?**
+An artefact would be something that differs between classes for reasons unrelated to biology, like a background level that depends on the acquisition day. The light direction is the same for every cell, in every split, so it cannot tell the classes apart by itself. What the network learns is how a cell scatters light that comes from one side. That depends on its granularity and chromatin, which change through the cycle. The orientation check shows that the network relies on the direction (left-right flipped images lose ≈ 0.14 macro-F1) but not on up/down (−0.014). The price is that the model is tied to this instrument geometry.
+
+**3. Your best epoch is often the last one. Does that mean you should train longer?**
+Not necessarily. The cosine schedule lowers the learning rate to almost zero at the maximum epoch, so the last epochs are the calmest and usually the best, whatever the maximum is. To know whether longer training helps, one would compare runs with different maximum epochs (e.g. 25 vs 40), not look at where the best epoch falls in one run. Early stopping, on the other hand, sometimes stopped runs long before the end (e.g. best epoch 5 of 25) because validation macro-F1 is noisy, which is one reason for the seed spread.
+</details>
+
+## Added overnight 2026-10-25/26 (by Claude, check every point)
+
+### `scripts/run_rf.py` — random forest baseline (RQ1)
+Reads the hand-crafted features from `data/features.parquet`, keeps the 28 columns of the `main` feature set, and trains a random forest on the training cells. It tries 12 configurations on validation with seed 0, picks the one with the highest validation macro-F1, then retrains that one with seeds 0, 1 and 2 for 4 and 7 classes. Every run is one row in `results/experiments.csv`; final runs also save their validation predictions.
+- **Why `main` and not all features:** the raw darkfield intensity levels track the image background, which differs by phase, so the forest could learn the background instead of the cell (PROJECT.md decision 2026-10-24).
+- **Why the imputer is inside a pipeline:** `SimpleImputer` is fitted inside `.fit()` on the training rows only, so validation cells never influence the medians (no leakage).
+- **Why vary `min_samples_leaf` instead of `max_depth`:** both limit how detailed the trees get; a minimum leaf size adapts to how many cells reach a branch, which matters with a 300-cell class next to a 10,000-cell class.
+- **Why `class_weight`:** without it the forest mostly predicts G1/S/G2; "balanced" gives each class equal total weight, "balanced_subsample" recomputes this inside each bootstrap sample.
+
+### `scripts/fig_rf_importance.py` — which features the forest uses
+Shuffles one feature column at a time in the validation set and measures how much the validation macro-F1 drops (permutation importance, 10 repeats). A big drop means the forest relies on that feature.
+- **Why permutation importance and not the built-in (impurity) importance:** impurity importance is computed on training data and favours continuous features with many split points; permutation importance is measured on held-out cells with the metric we actually report.
+- **Caveat:** correlated features share importance (area, perimeter and axis lengths all measure size), so a single feature can look less important than "size" as a whole really is.
+
+### `src/models.py` — the CNNs
+`SmallCNN`: four blocks of convolution → batch normalisation → ReLU → max pooling (66 → 33 → 16 → 8 → 4 px), global average pooling, dropout, one linear layer; 389,636 parameters. `ResNet18`: the standard 18-layer residual network from `timm`, with its first convolution changed from 3 to 2 input channels; 11.2 million parameters. Both have `embed(x)`, which returns the features just before the last layer (used for UMAP).
+- **Why average the RGB filters into conv1:** ImageNet filters expect colour images. Our two channels are both grey-scale; the mean of the R, G and B filter is what the filter would compute on a grey image, so the pretrained edge/blob detectors are kept. Copying only R and G (another option) would be arbitrary.
+- **Why upscale to 128 px for ResNet18:** ResNet18 shrinks the image by a factor of 32. A 66 px image would end at about 3 × 3 positions, and the pretrained filters were learnt on objects much larger than 66 px. 128 px gives 4 × 4 and objects closer to ImageNet scale, at about 2× the compute of 66 px (measured: 390 vs 780 images/s).
+- **Why global average pooling:** it makes the classifier independent of the exact position of the cell and needs far fewer parameters than flattening.
+- **Why batch normalisation:** keeps activations in a stable range so training from scratch works with larger learning rates.
+
+### `src/train.py` — one training script for every CNN
+Loads train and validation images (never test), normalises each channel with training statistics, trains with AdamW and a cosine learning-rate schedule, checks validation macro-F1 after every epoch, keeps the best weights and stops early. It logs one row per run, saves validation predictions and the best weights, and writes a checkpoint every epoch so a crashed run can resume.
+- **Why normalise with training statistics only:** computing the mean/SD on validation cells too would let information from those cells into the model (a mild leak).
+- **Why a weighted loss:** mitosis is 2% of cells; with plain cross-entropy the network can ignore it and still have low loss. Weighting class k by N / (K · n_k) makes every class contribute equally to the loss — the same idea as `class_weight="balanced"` in the forest.
+- **Why 90° rotations and flips as augmentation:** a cell in a flow cytometer has no "up"; rotating by 90° and flipping move pixels exactly (no interpolation blur), so the network learns that orientation does not matter. Intensity jitter mimics small brightness differences between cells/runs.
+- **⚠ Found overnight: this assumption is wrong for the darkfield IMAGE** (not for the cell): the side-scatter light comes from one side, so the left half is brighter in 81% of images. Rotating removes that information, and on validation SmallCNN did better without augmentation (see `scripts/orientation_check.py`). Up-down flips seem to be safe; left-right flips and 90° rotations are not.
+- **Why early stopping on validation macro-F1 (not loss):** macro-F1 is the metric we report and select on; loss can keep falling while the rare class gets worse.
+- **Why AdamW + cosine:** AdamW is Adam with weight decay applied correctly (decoupled from the gradient); cosine slowly lowers the learning rate to zero so the last epochs fine-tune instead of jumping around.
+- **Why the data stay on the GPU as uint8:** 22,586 × 2 × 66 × 66 bytes ≈ 200 MB; converting per batch is fast and avoids a slow data loader on a laptop.
+
+### `src/experiments.py` (changed)
+Three columns added: `run_id` (a unique name per run, so a queue can skip finished runs), `device` and `git_commit` (which code version produced the number; "-dirty" means uncommitted changes).
+
+### `src/interpret.py` — looking inside the CNNs
+`load_trained` rebuilds a finished run from its log row and best checkpoint; `embeddings` gives the penultimate features; `grad_cam` makes a heat map of where the network looked; `mask_fraction`/`border_fraction` turn a heat map into numbers.
+- **How Grad-CAM works (5 steps):** (1) run the image forward and store the activations of the last convolutional layer; (2) backpropagate the score of the class of interest to those activations; (3) average each channel's gradient over the image → one weight per channel; (4) weighted sum of the channels, ReLU (keep only evidence *for* the class); (5) upsample to 66 × 66.
+- **Why the last conv layer:** it has the most class-specific features while still keeping a (coarse) spatial map: 8 × 8 for SmallCNN, 4 × 4 for ResNet18 at 128 px — so ResNet maps are blurrier.
+- **Why measure "heat inside the mask" against "mask area":** if the heat were spread evenly, the share inside the mask would equal the mask's share of the image. Clearly more means the network looks at the cell; about equal or less suggests background/border use.
+
+### `scripts/fig_gradcam.py` — RQ5 figure and numbers
+Makes the Grad-CAM grid (4 random validation cells per phase: heat map, brightfield, darkfield) for the best CNN, the heat-in-mask / heat-in-border summary for all validation cells, and the map for training cell 30439. `--model smallcnn` makes the same for SmallCNN (files end in `_smallcnn`).
+- **Why both models:** the SmallCNN maps (8 × 8 grid) are sharper; the ResNet18 maps (4 × 4 grid) belong to the best model. They disagree for S phase (SmallCNN: border; ResNet18: cell).
+
+### `scripts/fig_umap.py` — RQ4
+UMAP of validation cells in three spaces (hand-crafted features, SmallCNN embedding, ResNet18 embedding), coloured by the 7 phases although the networks were trained on 4 classes. If the phases appear in cell-cycle order along a path, the continuous cycle is recoverable from features learnt for a discrete task.
+- **Why standardise the hand-crafted features:** UMAP uses distances; without scaling, area (hundreds of pixels) would dominate GLCM values (0–1).
+
+### `scripts/run_rf_raw_dark.py` — RQ5 side experiment for the forest
+Retrains the selected random forest on `raw_dark` (the main features plus the raw darkfield mean and percentiles). The raw darkfield level depends on the image background, and the background differs by phase.
+- **How to read it:** if adding background-dependent features raises the score, the forest can profit from a shortcut. Validation result: +0.015 macro-F1 (0.647 vs 0.632), a small but consistent gain over 3 seeds.
+
+### `scripts/make_results_table.py`, `scripts/make_table1.py`, `scripts/fig_model_comparison.py`, `scripts/fig_confusion.py`
+They read `results/experiments.csv` (and saved predictions) and write the tables and figures. Nothing is typed in by hand. The "final" runs of each model are identified by their run_id (`<model>_c<classes>_final_s<seed>`).
+- **Why mean ± SD over seeds:** a single run can be lucky; the SD shows how much the result moves when only the random seed changes (initialisation, batch order, augmentation).
+- **Why row-normalised confusion matrices:** each row then shows the recall of one true class and where its errors go. Raw counts would be dominated by G1.
+
+### `scripts/queue_phase3.sh`, `scripts/queue_phase5.sh`, `scripts/best_cnn_config.py`
+Shell scripts that run all training jobs one after another in the background, so the work continues even if the chat stops. Each run is skipped if its run_id is already logged, and resumes from its last checkpoint if it was interrupted. `best_cnn_config.py` reads the 12 tuning rows of a model family and prints the arguments of the best one.
+- **Why the same 12-configuration grid for every CNN:** RQ1/RQ2 compare model families; if one family got more tuning it could win just because of that.
+- **Why cap epochs (4 for tuning, 12 for final runs):** one laptop GPU, one night. The cap is identical for all families, so the comparison stays fair, but all CNN numbers are probably a bit below what longer training would give.
+
+### Learning curve (`--label-fraction`, `scripts/fig_learning_curve.py`)
+The model trains on a stratified 1%, 5% or 20% subset of the training cells (the validation set stays complete). One "epoch" always shows as many images as the full training set has, so the small subsets are repeated many times.
+- **Why equal gradient steps:** with a fixed number of epochs, a 1% run would get 100× fewer weight updates, and the curve would mostly measure "too little training", not "too few labels".
+- **Why stratified:** with 1% (226 cells) a random subset could contain almost no mitotic cells (about 5 are expected).
+
+### `scripts/fig_ablation.py` — RQ3 (preliminary)
+Six SmallCNN runs: augmentation none/basic × balancing none/weighted/oversample, seed 0 only.
+- **Weighted loss vs oversampling:** both make rare classes count more. Weighting multiplies their loss; oversampling shows their images more often (with repeats). With augmentation, repeated mitotic images are at least rotated/flipped differently each time.
+
+### `scripts/pseudotime.py` — RQ4, simplest pseudotime
+Takes the first principal component (PC1) of each feature space as a 1-D "time" axis and measures with Spearman's ρ whether it orders the cells G1 → S → G2 → mitosis.
+- **Why Spearman:** phase order is a ranking, not a number on a scale; Spearman only uses ranks.
+- **Caveat to say in the oral:** the CNN was trained to separate G1, S, G2 and mitosis, so an embedding that orders those four is partly what we trained for. The interesting part is what it does with phases it was never told apart (pro/meta/ana/telo, all "mitosis") and whether the order is continuous within a class.
+
+### Examiner questions (practice for the closed-book oral)
+<details>
+<summary>5 likely questions with model answers — try answering first, then open</summary>
+
+**1. Why do you report macro-F1 and not accuracy?**
+Validation has 2,150 G1 cells but only 107 mitotic cells (2%). A model that always says G1 already reaches 44% accuracy (2,150 / 4,840), and one that is good on G1/S/G2 but never predicts mitosis can reach high accuracy while being useless for mitosis. Macro-F1 computes the F1 score of each class separately and averages them with equal weight, so failing on mitosis costs a quarter of the score in the 4-class task. The "Chance (majority)" row shows this: always predicting G1 gives macro-F1 0.154 although its G1 recall is 1.0.
+
+**2. How do you know the CNN does not just learn the image background?**
+Three checks. (a) Grad-CAM: for G1, G2 and mitosis, a much larger share of the heat lies inside the cell mask than the mask's share of the image (e.g. prophase 0.64 of the heat in 0.17 of the area). (b) For S phase the heat is mostly in the border ring (0.44, about the ring's area share 0.43), which is a warning sign we report, not hide. (c) The random-forest side experiment: adding raw darkfield levels, which follow the background, raised macro-F1 by only 0.015. Grad-CAM is a coarse map (8 × 8 or 4 × 4 positions), so it is an indication, not proof.
+
+**3. Why did you never look at the test set, and what is the validation set for?**
+The validation set is used to choose hyperparameters and the best epoch. Every choice made on it makes the validation score slightly optimistic, because we picked what happened to work best on those cells. The test set is touched once, at the end, with everything already fixed, so its score is an honest estimate for new cells. If we tuned on the test set, it would become a second validation set and nothing would remain to give an unbiased estimate.
+
+**4. Why does ImageNet pretraining help on grey-scale cell images that look nothing like ImageNet photos?**
+The first layers of a network trained on ImageNet learn general detectors: edges, blobs, textures at different scales. Those are useful for any image, including cells. Starting from them, the network needs fewer labelled examples and fewer updates to find good features than starting from random weights. In our validation runs, the pretrained ResNet18 beat the same architecture from scratch under the same epoch cap and tuning grid. Part of the gap may shrink with longer training, because our cap (12 epochs) favours the model that starts closer to a good solution.
+
+**5. Why three seeds, and what does the ± mean?**
+Training involves randomness: initial weights (for scratch models), batch order and augmentation. Running with seeds 0, 1, 2 shows how much the score moves when only that randomness changes. The ± is the standard deviation over the three runs. If two models differ by less than about two of these SDs, we should not claim one is better. Three seeds is the minimum for a rough estimate, not a statistical test.
+</details>
+
+### `scripts/border_check.py` — RQ5 follow-up: does the CNN use the background? (added overnight, extra)
+Changes only the outer 8-pixel ring of each validation image and counts how many predictions change. "Flattened" sets the ring to its own median brightness (keeps the level, removes edges/artefacts); "common" sets it to the same brightness for every cell (removes the level as well). "Same class" / "other class" paste in the ring of a random validation cell of the same / a different class.
+- **How to read it:** the cell is in the centre and is not touched, so a network that only looked at the cell would not change its answers. A drop in macro-F1 means it uses the background.
+- **Weak point to admit in the oral:** the edited image has a sharp step at the edge of the ring, which never occurs in real images. A network can react to such an unusual image even if it never used the background. That is why the swap is in there: the same-class and other-class swaps have the same kind of seam, so their *difference* measures the background's class information alone. Validation result: the difference was close to 0 (−0.014 to +0.012) for all three CNNs → the 8-px border ring carries no phase-specific information the networks use, although every edit lowered the score. The masking experiment (run 4) adds: the networks do not need the background (cell only ≈ full image: SmallCNN 0.729 vs 0.744, ResNet18 0.769 vs 0.781, val), but in this dataset the background is not free of phase information: a network trained on the background alone, with the cell's size hidden by a fixed disc, still reaches 0.45–0.47 macro-F1 (chance 0.26), apparently through a phase-dependent scaling of the darkfield intensity.
+
+### `scripts/orientation_check.py` — do the images have a direction? (added overnight, extra)
+(1) Compares the brightness of the left/right/top/bottom halves of all training images. (2) Evaluates the SmallCNN trained without augmentation, and the final SmallCNN, on flipped and rotated validation images.
+- **How to read it:** a model that does not care about direction scores the same on flipped images. The no-augmentation model loses a lot on left-right flips but little on up-down flips, so it uses the left-right direction of the darkfield light.
+- **Leakage or not?** Not leakage: the direction comes from the instrument and is the same in training, validation and test images. It is real information. Whether we *want* the model to use it is a choice: it would not transfer to an instrument with a different geometry.

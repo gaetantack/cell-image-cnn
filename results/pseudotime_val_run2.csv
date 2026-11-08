@@ -1,0 +1,4 @@
+space,spearman_7_phases,spearman_4_classes,pc1_variance_explained
+Hand-crafted features,0.453,0.453,0.213
+SmallCNN embedding,0.848,0.848,0.42399999499320984
+ResNet18 (ImageNet) embedding,0.851,0.851,0.3009999990463257
